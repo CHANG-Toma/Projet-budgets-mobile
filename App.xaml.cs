@@ -1,7 +1,4 @@
-﻿using Projet_Budget_M1.Utils;
-using Projet_Budget_M1.ViewModels;
-
-namespace Projet_Budget_M1
+﻿namespace Projet_Budget_M1
 {
     public partial class App : Application
     {

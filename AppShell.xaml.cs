@@ -1,5 +1,4 @@
-﻿using Projet_Budget_M1.Utils;
-using Projet_Budget_M1.ViewModels;
+﻿using Projet_Budget_M1.Views;
 
 namespace Projet_Budget_M1
 {
@@ -9,16 +8,12 @@ namespace Projet_Budget_M1
         {
             InitializeComponent();
             
-            // Configuration du ViewModel pour la page principale
-            var mainPage = new Views.MainPage();
-            mainPage.BindingContext = ServiceHelper.GetService<MainPageViewModel>();
-            
-            // Remplacement de la page par défaut
+            // Configuration de la page de connexion comme page principale
             Items.Clear();
             Items.Add(new ShellContent
             {
-                Content = mainPage,
-                Title = "Budget App"
+                Content = new LoginPage(),
+                Title = "Connexion"
             });
         }
     }

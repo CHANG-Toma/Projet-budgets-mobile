@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Projet_Budget_M1.Views.StatisticsPage"
+             Title="Statistiques"
+             BackgroundColor="#F5F5F5">
+
+    <Grid RowDefinitions="*,Auto">
+        <!-- Main Content -->
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="20" Padding="20">
+                <Label Text="📊" FontSize="60" HorizontalOptions="Center" />
+                <Label Text="Statistiques" FontSize="24" FontAttributes="Bold" TextColor="#2C3E50" HorizontalOptions="Center" />
+                <Label Text="Page en cours de développement" FontSize="16" TextColor="#7F8C8D" HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Menu Footer avec 4 boutons -->
+        <Frame Grid.Row="1"
+               BackgroundColor="White"
+               CornerRadius="0"
+               Padding="0"
+               HasShadow="True"
+               Margin="0"
+               BorderColor="#E0E0E0">
+            <Grid ColumnDefinitions="*,*,*,*" 
+                  RowDefinitions="Auto,Auto"
+                  Padding="10,15,10,10">
+                
+                <!-- Bouton Accueil -->
+                <VerticalStackLayout Grid.Column="0" 
+                                    Grid.Row="0" 
+                                    HorizontalOptions="Center" 
+                                    Spacing="5">
+                    <Button Text="🏠"
+                            FontSize="24"
+                            BackgroundColor="Transparent"
+                            TextColor="#7F8C8D"
+                            BorderWidth="0"
+                            WidthRequest="50"
+                            HeightRequest="50"
+                            CornerRadius="25"
+                            Clicked="OnHomeClicked" />
+                    <Label Text="Accueil"
+                           FontSize="12"
+                           TextColor="#7F8C8D"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+
+                <!-- Bouton Transactions -->
+                <VerticalStackLayout Grid.Column="1" 
+                                    Grid.Row="0" 
+                                    HorizontalOptions="Center" 
+                                    Spacing="5">
+                    <Button Text="💳"
+                            FontSize="24"
+                            BackgroundColor="Transparent"
+                            TextColor="#7F8C8D"
+                            BorderWidth="0"
+                            WidthRequest="50"
+                            HeightRequest="50"
+                            CornerRadius="25"
+                            Clicked="OnTransactionsClicked" />
+                    <Label Text="Transactions"
+                           FontSize="12"
+                           TextColor="#7F8C8D"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+
+                <!-- Bouton Statistiques -->
+                <VerticalStackLayout Grid.Column="2" 
+                                    Grid.Row="0" 
+                                    HorizontalOptions="Center" 
+                                    Spacing="5">
+                    <Button Text="📊"
+                            FontSize="24"
+                            BackgroundColor="Transparent"
+                            TextColor="#3498DB"
+                            BorderWidth="0"
+                            WidthRequest="50"
+                            HeightRequest="50"
+                            CornerRadius="25"
+                            Clicked="OnStatisticsClicked" />
+                    <Label Text="Statistiques"
+                           FontSize="12"
+                           TextColor="#3498DB"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+
+                <!-- Bouton Budget -->
+                <VerticalStackLayout Grid.Column="3" 
+                                    Grid.Row="0" 
+                                    HorizontalOptions="Center" 
+                                    Spacing="5">
+                    <Button Text="💰"
+                            FontSize="24"
+                            BackgroundColor="Transparent"
+                            TextColor="#7F8C8D"
+                            BorderWidth="0"
+                            WidthRequest="50"
+                            HeightRequest="50"
+                            CornerRadius="25"
+                            Clicked="OnBudgetClicked" />
+                    <Label Text="Budget"
+                           FontSize="12"
+                           TextColor="#7F8C8D"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
+        </Frame>
+    </Grid>
+
+</ContentPage>

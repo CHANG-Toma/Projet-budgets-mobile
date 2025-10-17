@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Projet_Budget_M1.Views.RegisterPage"
+             Title="Inscription"
+             BackgroundColor="#F5F5F5">
+
+    <ScrollView>
+        <Grid Padding="20" VerticalOptions="CenterAndExpand">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Carte principale d'inscription -->
+            <Frame Grid.Row="1" 
+                   BackgroundColor="White" 
+                   CornerRadius="20" 
+                   Padding="40,50" 
+                   Margin="0,20"
+                   HasShadow="True">
+
+                <StackLayout Spacing="30">
+                    <!-- Logo et titre -->
+                    <StackLayout HorizontalOptions="Center" Spacing="15">
+                        <!-- Icône du portefeuille -->
+                        <Frame BackgroundColor="#2C3E50" 
+                               CornerRadius="15" 
+                               WidthRequest="60" 
+                               HeightRequest="60" 
+                               HorizontalOptions="Center">
+                            <Label Text="💼" 
+                                   FontSize="30" 
+                                   HorizontalOptions="Center" 
+                                   VerticalOptions="Center"
+                                   TextColor="White"/>
+                        </Frame>
+
+                        <!-- Titre -->
+                        <Label Text="Budget Manager" 
+                               FontSize="28" 
+                               FontAttributes="Bold" 
+                               TextColor="#2C3E50" 
+                               HorizontalOptions="Center"/>
+
+                        <!-- Sous-titre -->
+                        <Label Text="Créez votre compte gratuitement" 
+                               FontSize="16" 
+                               TextColor="#2C3E50" 
+                               HorizontalOptions="Center"/>
+                    </StackLayout>
+
+                    <!-- Champs de saisie -->
+                    <StackLayout Spacing="20">
+                        <!-- Champ Nom complet -->
+                        <StackLayout Spacing="8">
+                            <Label Text="Nom complet" 
+                                   FontSize="16" 
+                                   TextColor="#2C3E50" 
+                                   FontAttributes="Bold"/>
+                            <Entry x:Name="FullNameEntry"
+                                   Placeholder="Jean Dupont" 
+                                   PlaceholderColor="#BDC3C7"
+                                   BackgroundColor="White"
+                                   TextColor="#2C3E50"
+                                   FontSize="16"
+                                   HeightRequest="50"/>
+                        </StackLayout>
+
+                        <!-- Champ Email -->
+                        <StackLayout Spacing="8">
+                            <Label Text="Email" 
+                                   FontSize="16" 
+                                   TextColor="#2C3E50" 
+                                   FontAttributes="Bold"/>
+                            <Entry x:Name="EmailEntry"
+                                   Placeholder="exemple@email.com" 
+                                   PlaceholderColor="#BDC3C7"
+                                   BackgroundColor="White"
+                                   TextColor="#2C3E50"
+                                   FontSize="16"
+                                   HeightRequest="50"
+                                   Keyboard="Email"/>
+                        </StackLayout>
+
+                        <!-- Champ Mot de passe -->
+                        <StackLayout Spacing="8">
+                            <Label Text="Mot de passe" 
+                                   FontSize="16" 
+                                   TextColor="#2C3E50" 
+                                   FontAttributes="Bold"/>
+                            <Entry x:Name="PasswordEntry"
+                                   Placeholder="........" 
+                                   PlaceholderColor="#BDC3C7"
+                                   BackgroundColor="White"
+                                   TextColor="#2C3E50"
+                                   FontSize="16"
+                                   HeightRequest="50"
+                                   IsPassword="True"/>
+                        </StackLayout>
+                    </StackLayout>
+
+                    <!-- Bouton d'inscription -->
+                    <Button Text="S'inscrire" 
+                            BackgroundColor="#2C3E50" 
+                            TextColor="White" 
+                            FontSize="18" 
+                            FontAttributes="Bold"
+                            HeightRequest="55"
+                            CornerRadius="10"
+                            Clicked="OnRegisterClicked"/>
+
+                    <!-- Lien vers la page de connexion -->
+                    <StackLayout Orientation="Horizontal" 
+                                 HorizontalOptions="Center" 
+                                 Spacing="5">
+                        <Label Text="Déjà un compte ? " 
+                               FontSize="14" 
+                               TextColor="#2C3E50"/>
+                        <Label Text="Se connecter" 
+                               FontSize="14" 
+                               TextColor="#3498DB" 
+                               FontAttributes="Bold">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnLoginTapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+        </Grid>
+    </ScrollView>
+
+</ContentPage>

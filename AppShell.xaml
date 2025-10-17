@@ -3,12 +3,30 @@
     x:Class="Projet_Budget_M1.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:Projet_Budget_M1"
-    Title="Projet_Budget_M1">
+    xmlns:local="clr-namespace:Projet_Budget_M1.Views"
+    Title="Budget Manager"
+    Shell.FlyoutBehavior="Disabled">
+
+    <!-- Page principale avec menu footer personnalisé -->
+    <ShellContent
+        Title="Budget Manager"
+        ContentTemplate="{DataTemplate local:DashboardPage}"
+        Route="DashboardPage" />
+
+    <!-- Routes pour les autres pages -->
+    <ShellContent
+        Title="Transactions"
+        ContentTemplate="{DataTemplate local:TransactionsPage}"
+        Route="TransactionsPage" />
 
     <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+        Title="Statistiques"
+        ContentTemplate="{DataTemplate local:StatisticsPage}"
+        Route="StatisticsPage" />
+
+    <ShellContent
+        Title="Budget"
+        ContentTemplate="{DataTemplate local:BudgetPage}"
+        Route="BudgetPage" />
 
 </Shell>

@@ -1,4 +1,6 @@
-﻿namespace Projet_Budget_M1
+﻿using Projet_Budget_M1.Views;
+
+namespace Projet_Budget_M1
 {
     public partial class App : Application
     {
@@ -9,7 +11,8 @@
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new AppShell());
+            // Afficher la page de connexion au démarrage
+            return new Window(new LoginPage());
         }
     }
 }

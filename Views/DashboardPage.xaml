@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Projet_Budget_M1.Views.DashboardPage"
+             Title="Tableau de bord"
+             BackgroundColor="#F5F5F5">
+
+    <Grid RowDefinitions="*,Auto">
+        <!-- Main Content -->
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="20" Spacing="20">
+
+                <!-- Header avec photo de profil -->
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="5">
+                        <Label Text="Tableau de bord"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="#2C3E50" />
+                        <Label Text="Octobre 2025"
+                               FontSize="16"
+                               TextColor="#7F8C8D" />
+                    </VerticalStackLayout>
+                    
+                    <!-- Photo de profil -->
+                    <Frame Grid.Column="1"
+                           BackgroundColor="#ECF0F1"
+                           CornerRadius="25"
+                           WidthRequest="50"
+                           HeightRequest="50"
+                           HorizontalOptions="End"
+                           VerticalOptions="Start">
+                        <Label Text="👤"
+                               FontSize="24"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"
+                               TextColor="#7F8C8D" />
+                    </Frame>
+                </Grid>
+
+                <!-- Solde total Card -->
+                <Frame BackgroundColor="White"
+                       CornerRadius="15"
+                       Padding="20"
+                       HasShadow="True">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Grid.Column="0" VerticalOptions="Center">
+                            <Label Text="Solde total"
+                                   FontSize="14"
+                                   TextColor="#7F8C8D" />
+                            <Label Text="2450.50 €"
+                                   FontSize="36"
+                                   FontAttributes="Bold"
+                                   TextColor="#2C3E50" />
+                        </VerticalStackLayout>
+                        <Frame Grid.Column="1"
+                               BackgroundColor="#ECF0F1"
+                               CornerRadius="10"
+                               WidthRequest="50"
+                               HeightRequest="50"
+                               HorizontalOptions="End"
+                               VerticalOptions="Center">
+                            <Label Text="💼"
+                                   FontSize="24"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center" />
+                        </Frame>
+                    </Grid>
+                </Frame>
+
+                <!-- Dépenses Card -->
+                <Frame BackgroundColor="#FDEDEC"
+                       CornerRadius="15"
+                       Padding="20"
+                       HasShadow="True">
+                    <VerticalStackLayout Spacing="5">
+                        <HorizontalStackLayout Spacing="5">
+                            <Label Text="↘"
+                                   FontSize="16"
+                                   TextColor="#E74C3C" />
+                            <Label Text="Dépenses"
+                                   FontSize="16"
+                                   TextColor="#E74C3C"
+                                   FontAttributes="Bold" />
+                        </HorizontalStackLayout>
+                        <Label Text="1049.50 €"
+                               FontSize="22"
+                               FontAttributes="Bold"
+                               TextColor="#E74C3C" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Budget mensuel Card -->
+                <Frame BackgroundColor="White"
+                       CornerRadius="15"
+                       Padding="20"
+                       HasShadow="True">
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0"
+                                   Text="Budget mensuel"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="#2C3E50" />
+                            <Label Grid.Column="1"
+                                   Text="Voir détails"
+                                   FontSize="14"
+                                   TextColor="#3498DB"
+                                   TextDecorations="Underline">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnViewBudgetDetailsTapped"/>
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Grid>
+                        <Label Text="Dépensé"
+                               FontSize="14"
+                               TextColor="#7F8C8D" />
+                        <Label Text="1049.50 € / 3000.00 €"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="#2C3E50" />
+                        <ProgressBar Progress="0.35"
+                                     ProgressColor="#3498DB"
+                                     BackgroundColor="#ECF0F1"
+                                     HeightRequest="8" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Transactions récentes Header -->
+                <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+                    <Label Grid.Column="0"
+                           Text="Transactions récentes"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="#2C3E50" />
+                    <Label Grid.Column="1"
+                           Text="Voir tout"
+                           FontSize="14"
+                           TextColor="#3498DB"
+                           TextDecorations="Underline">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnViewAllTransactionsTapped"/>
+                        </Label.GestureRecognizers>
+                    </Label>
+                </Grid>
+
+                <!-- Transactions List -->
+                <VerticalStackLayout Spacing="10">
+                    <!-- Transaction 1 -->
+                    <Frame BackgroundColor="White"
+                           CornerRadius="10"
+                           Padding="15"
+                           HasShadow="True">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <VerticalStackLayout Grid.Column="0">
+                                <Label Text="Salaire"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#2C3E50" />
+                                <Label Text="Revenu"
+                                       FontSize="13"
+                                       TextColor="#7F8C8D" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" HorizontalOptions="End">
+                                <Label Text="+3500.00 €"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#27AE60" />
+                                <Label Text="15/10"
+                                       FontSize="13"
+                                       TextColor="#7F8C8D"
+                                       HorizontalTextAlignment="End" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Frame>
+
+                    <!-- Transaction 2 -->
+                    <Frame BackgroundColor="White"
+                           CornerRadius="10"
+                           Padding="15"
+                           HasShadow="True">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <VerticalStackLayout Grid.Column="0">
+                                <Label Text="Courses"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#2C3E50" />
+                                <Label Text="Alimentation"
+                                       FontSize="13"
+                                       TextColor="#7F8C8D" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" HorizontalOptions="End">
+                                <Label Text="-85.50 €"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#E74C3C" />
+                                <Label Text="16/10"
+                                       FontSize="13"
+                                       TextColor="#7F8C8D"
+                                       HorizontalTextAlignment="End" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Frame>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Menu Footer avec 4 boutons -->
+        <Frame Grid.Row="1"
+               BackgroundColor="White"
+               CornerRadius="0"
+               Padding="0"
+               HasShadow="True"
+               Margin="0"
+               BorderColor="#E0E0E0">
+            <Grid ColumnDefinitions="*,*,*,*" 
+                  RowDefinitions="Auto,Auto"
+                  Padding="10,15,10,10">
+                
+                <!-- Bouton Accueil -->
+                <VerticalStackLayout Grid.Column="0" 
+                                    Grid.Row="0" 
+                                    HorizontalOptions="Center" 
+                                    Spacing="5">
+                    <Button Text="🏠"
+                            FontSize="24"
+                            BackgroundColor="Transparent"
+                            TextColor="#3498DB"
+                            BorderWidth="0"
+                            WidthRequest="50"
+                            HeightRequest="50"
+                            CornerRadius="25"
+                            Clicked="OnHomeClicked" />
+                    <Label Text="Accueil"
+                           FontSize="12"
+                           TextColor="#3498DB"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+
+                <!-- Bouton Transactions -->
+                <VerticalStackLayout Grid.Column="1" 
+                                    Grid.Row="0" 
+                                    HorizontalOptions="Center" 
+                                    Spacing="5">
+                    <Button Text="💳"
+                            FontSize="24"
+                            BackgroundColor="Transparent"
+                            TextColor="#7F8C8D"
+                            BorderWidth="0"
+                            WidthRequest="50"
+                            HeightRequest="50"
+                            CornerRadius="25"
+                            Clicked="OnTransactionsClicked" />
+                    <Label Text="Transactions"
+                           FontSize="12"
+                           TextColor="#7F8C8D"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+
+                <!-- Bouton Statistiques -->
+                <VerticalStackLayout Grid.Column="2" 
+                                    Grid.Row="0" 
+                                    HorizontalOptions="Center" 
+                                    Spacing="5">
+                    <Button Text="📊"
+                            FontSize="24"
+                            BackgroundColor="Transparent"
+                            TextColor="#7F8C8D"
+                            BorderWidth="0"
+                            WidthRequest="50"
+                            HeightRequest="50"
+                            CornerRadius="25"
+                            Clicked="OnStatisticsClicked" />
+                    <Label Text="Statistiques"
+                           FontSize="12"
+                           TextColor="#7F8C8D"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+
+                <!-- Bouton Budget -->
+                <VerticalStackLayout Grid.Column="3" 
+                                    Grid.Row="0" 
+                                    HorizontalOptions="Center" 
+                                    Spacing="5">
+                    <Button Text="💰"
+                            FontSize="24"
+                            BackgroundColor="Transparent"
+                            TextColor="#7F8C8D"
+                            BorderWidth="0"
+                            WidthRequest="50"
+                            HeightRequest="50"
+                            CornerRadius="25"
+                            Clicked="OnBudgetClicked" />
+                    <Label Text="Budget"
+                           FontSize="12"
+                           TextColor="#7F8C8D"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
+        </Frame>
+
+        <!-- Floating Action Button -->
+        <Button Grid.Row="0"
+                Text="+"
+                FontSize="30"
+                FontAttributes="Bold"
+                TextColor="White"
+                BackgroundColor="#2C3E50"
+                CornerRadius="30"
+                WidthRequest="60"
+                HeightRequest="60"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="0,0,20,80"
+                Clicked="OnAddTransactionClicked" />
+    </Grid>
+</ContentPage>

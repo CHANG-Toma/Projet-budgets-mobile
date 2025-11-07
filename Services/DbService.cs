@@ -161,9 +161,8 @@ public static class DbService
         var user = await GetUserByEmailAsync(tx.OwnerEmail);
         if (user == null) throw new Exception("Utilisateur introuvable");
         
-        // Valeurs par défaut pour id_moyen (1 = Espèces par défaut) et id_budget (générique)
+        // Valeurs par défaut pour id_moyen (1 = Espèces par défaut)
         int idMoyen = 1;
-        string idBudget = $"BUDGET_{DateTime.Now:yyyyMM}"; // Budget mensuel auto
         
         // Créer ou récupérer le moyen de paiement par défaut
         await using var cmdMoyen = connection.CreateCommand();
@@ -171,13 +170,12 @@ public static class DbService
         cmdMoyen.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
         await cmdMoyen.ExecuteNonQueryAsync();
         
-        // Créer ou récupérer le budget mensuel
-        await using var cmdBudget = connection.CreateCommand();
-        cmdBudget.CommandText = "INSERT IGNORE INTO budgetmensuel (id_budget, mois, limite, id_utilisateur) VALUES (@id_budget, @mois, NULL, @id_utilisateur)";
-        cmdBudget.Parameters.AddWithValue("@id_budget", idBudget);
-        cmdBudget.Parameters.AddWithValue("@mois", new DateTime(tx.Date.Year, tx.Date.Month, 1));
-        cmdBudget.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
-        await cmdBudget.ExecuteNonQueryAsync();
+        // Créer ou récupérer le budget mensuel (retourne un INT)
+        int idBudget = await GetOrCreateMonthlyBudgetIdAsync(tx.OwnerEmail, tx.Date);
+        
+        // S'assurer que la catégorie existe dans la table catégorie
+        // Si elle n'existe pas, elle sera créée automatiquement
+        await GetOrCreateCategoryAsync(tx.OwnerEmail, tx.Category);
         
         await using var cmd = connection.CreateCommand();
         if (tx.Id == 0)
@@ -287,6 +285,909 @@ public static class DbService
         }
         return list;
     }
+
+    // ==================== GESTION DES BUDGETS ====================
+
+    /// <summary>
+    /// Récupère ou crée le budget mensuel pour un utilisateur (retourne l'ID INT)
+    /// </summary>
+    public static async Task<int> GetOrCreateMonthlyBudgetIdAsync(string email, DateTime month)
+    {
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) throw new Exception("Utilisateur introuvable");
+
+        var monthStart = new DateTime(month.Year, month.Month, 1);
+        
+        await using var connection = await OpenConnectionAsync();
+        
+        // Vérifier si un budget existe déjà pour ce mois
+        await using var checkCmd = connection.CreateCommand();
+        checkCmd.CommandText = @"SELECT id_budget FROM budgetmensuel 
+                                WHERE id_utilisateur = @id_utilisateur 
+                                AND mois = @mois 
+                                LIMIT 1";
+        checkCmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        checkCmd.Parameters.AddWithValue("@mois", monthStart);
+        
+        var existingId = await checkCmd.ExecuteScalarAsync();
+        if (existingId != null)
+        {
+            return Convert.ToInt32(existingId);
+        }
+        
+        // Créer un nouveau budget mensuel
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"INSERT INTO budgetmensuel (mois, limite, id_utilisateur) 
+                            VALUES (@mois, NULL, @id_utilisateur);
+                            SELECT LAST_INSERT_ID();";
+        cmd.Parameters.AddWithValue("@mois", monthStart);
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        var result = await cmd.ExecuteScalarAsync();
+        return Convert.ToInt32(result);
+    }
+
+    /// <summary>
+    /// Récupère toutes les catégories d'un utilisateur (sans doublons)
+    /// </summary>
+    public static async Task<List<Categorie>> GetCategoriesAsync(string email)
+    {
+        var list = new List<Categorie>();
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) return list;
+
+        await using var connection = await OpenConnectionAsync();
+        await using var cmd = connection.CreateCommand();
+        // Utiliser GROUP BY pour éviter les doublons et prendre le premier ID trouvé
+        cmd.CommandText = @"SELECT MIN(id_categorie) as id_categorie, nom_categorie, id_utilisateur 
+                            FROM catégorie 
+                            WHERE id_utilisateur=@id_utilisateur 
+                            GROUP BY nom_categorie, id_utilisateur
+                            ORDER BY nom_categorie";
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        while (await reader.ReadAsync())
+        {
+            var nomCategorie = reader.GetString(1);
+            // Double vérification pour éviter les doublons (au cas où)
+            if (seenNames.Contains(nomCategorie)) continue;
+            seenNames.Add(nomCategorie);
+            
+            list.Add(new Categorie
+            {
+                IdCategorie = reader.GetInt32(0),
+                NomCategorie = nomCategorie,
+                IdUtilisateur = reader.GetInt32(2)
+            });
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// Récupère ou crée une catégorie (retourne toujours l'ID, même si elle existe déjà)
+    /// </summary>
+    public static async Task<int> GetOrCreateCategoryAsync(string email, string nomCategorie)
+    {
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) throw new Exception("Utilisateur introuvable");
+
+        if (string.IsNullOrWhiteSpace(nomCategorie))
+            throw new Exception("Le nom de la catégorie ne peut pas être vide");
+
+        await using var connection = await OpenConnectionAsync();
+        
+        // Vérifier si la catégorie existe déjà pour cet utilisateur (insensible à la casse)
+        // Utiliser MIN pour toujours retourner le même ID en cas de doublons
+        await using var checkCmd = connection.CreateCommand();
+        checkCmd.CommandText = @"SELECT MIN(id_categorie) FROM catégorie 
+                                WHERE LOWER(TRIM(nom_categorie)) = LOWER(TRIM(@nom_categorie)) 
+                                AND id_utilisateur = @id_utilisateur";
+        checkCmd.Parameters.AddWithValue("@nom_categorie", nomCategorie.Trim());
+        checkCmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        var existingId = await checkCmd.ExecuteScalarAsync();
+        if (existingId != null && !Convert.IsDBNull(existingId))
+        {
+            // La catégorie existe déjà, retourner son ID (le plus petit en cas de doublons)
+            return Convert.ToInt32(existingId);
+        }
+
+        // Créer la catégorie si elle n'existe pas
+        // Utiliser INSERT IGNORE pour éviter les doublons en cas de race condition
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"INSERT IGNORE INTO catégorie (nom_categorie, id_utilisateur) 
+                            VALUES (@nom_categorie, @id_utilisateur)";
+        cmd.Parameters.AddWithValue("@nom_categorie", nomCategorie.Trim());
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        await cmd.ExecuteNonQueryAsync();
+        
+        // Récupérer l'ID (soit celui qui vient d'être créé, soit celui qui existait déjà)
+        // Utiliser MIN pour toujours retourner le même ID en cas de doublons
+        await using var getIdCmd = connection.CreateCommand();
+        getIdCmd.CommandText = @"SELECT MIN(id_categorie) FROM catégorie 
+                                WHERE LOWER(TRIM(nom_categorie)) = LOWER(TRIM(@nom_categorie)) 
+                                AND id_utilisateur = @id_utilisateur";
+        getIdCmd.Parameters.AddWithValue("@nom_categorie", nomCategorie.Trim());
+        getIdCmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        var id = await getIdCmd.ExecuteScalarAsync();
+        if (id != null && !Convert.IsDBNull(id))
+        {
+            return Convert.ToInt32(id);
+        }
+        
+        throw new Exception("Impossible de créer ou récupérer la catégorie");
+    }
+
+    /// <summary>
+    /// Ajoute une nouvelle catégorie (empêche les doublons, lève une exception si elle existe déjà)
+    /// </summary>
+    public static async Task<int> AddCategoryAsync(string email, string nomCategorie)
+    {
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) throw new Exception("Utilisateur introuvable");
+
+        if (string.IsNullOrWhiteSpace(nomCategorie))
+            throw new Exception("Le nom de la catégorie ne peut pas être vide");
+
+        await using var connection = await OpenConnectionAsync();
+        
+        // Vérifier si la catégorie existe déjà pour cet utilisateur (insensible à la casse)
+        await using var checkCmd = connection.CreateCommand();
+        checkCmd.CommandText = @"SELECT id_categorie FROM catégorie 
+                                WHERE LOWER(TRIM(nom_categorie)) = LOWER(TRIM(@nom_categorie)) 
+                                AND id_utilisateur = @id_utilisateur 
+                                LIMIT 1";
+        checkCmd.Parameters.AddWithValue("@nom_categorie", nomCategorie.Trim());
+        checkCmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        var existingId = await checkCmd.ExecuteScalarAsync();
+        if (existingId != null)
+        {
+            // La catégorie existe déjà, lever une exception
+            throw new Exception($"La catégorie '{nomCategorie.Trim()}' existe déjà. Impossible de créer un doublon.");
+        }
+
+        // Créer la catégorie si elle n'existe pas (utiliser INSERT IGNORE pour éviter les doublons)
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"INSERT IGNORE INTO catégorie (nom_categorie, id_utilisateur) 
+                            VALUES (@nom_categorie, @id_utilisateur)";
+        cmd.Parameters.AddWithValue("@nom_categorie", nomCategorie.Trim());
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        await cmd.ExecuteNonQueryAsync();
+        
+        // Récupérer l'ID (soit celui qui vient d'être créé, soit celui qui existait déjà)
+        await using var getIdCmd = connection.CreateCommand();
+        getIdCmd.CommandText = @"SELECT id_categorie FROM catégorie 
+                                WHERE LOWER(TRIM(nom_categorie)) = LOWER(TRIM(@nom_categorie)) 
+                                AND id_utilisateur = @id_utilisateur 
+                                LIMIT 1";
+        getIdCmd.Parameters.AddWithValue("@nom_categorie", nomCategorie.Trim());
+        getIdCmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        var id = await getIdCmd.ExecuteScalarAsync();
+        if (id != null)
+        {
+            return Convert.ToInt32(id);
+        }
+        
+        throw new Exception($"La catégorie '{nomCategorie.Trim()}' existe déjà ou n'a pas pu être créée.");
+    }
+
+    /// <summary>
+    /// Récupère les budgets par catégorie pour un mois donné
+    /// Affiche les catégories par défaut + celles des transactions, sans les créer en BD
+    /// </summary>
+    public static async Task<List<BudgetCategorie>> GetCategoryBudgetsAsync(string email, DateTime month)
+    {
+        var list = new List<BudgetCategorie>();
+        var user = await GetUserByEmailAsync(email);
+        if (user == null)
+        {
+            System.Diagnostics.Debug.WriteLine("GetCategoryBudgetsAsync: Utilisateur introuvable");
+            return list;
+        }
+        
+        System.Diagnostics.Debug.WriteLine($"GetCategoryBudgetsAsync: Début pour {email}, mois {month:yyyy-MM}");
+        Console.WriteLine($"🔍 GetCategoryBudgetsAsync: Début pour {email}, mois {month:yyyy-MM}");
+
+        var budgetId = await GetOrCreateMonthlyBudgetIdAsync(email, month);
+        var monthStart = new DateTime(month.Year, month.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+        await using var connection = await OpenConnectionAsync();
+        
+        // Catégories par défaut (affichées mais pas créées en BD)
+        var defaultCategories = new[] { "Logement", "Alimentation", "Transport", "Santé", "Loisirs", "Factures" };
+        
+        // Récupérer toutes les catégories uniques des transactions pour ce mois
+        var transactionCategories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            await using var transCmd = connection.CreateCommand();
+            transCmd.CommandText = @"SELECT DISTINCT 
+                                        SUBSTRING_INDEX(d.description, ' - ', -1) as categorie
+                                    FROM depense d
+                                    WHERE d.id_utilisateur = @id_utilisateur
+                                      AND d.date_depense >= @mois_debut
+                                      AND d.date_depense <= @mois_fin
+                                      AND d.description LIKE '% - %'
+                                      AND LOWER(TRIM(SUBSTRING_INDEX(d.description, ' - ', -1))) != 'salaire'";
+            transCmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+            transCmd.Parameters.AddWithValue("@mois_debut", monthStart);
+            transCmd.Parameters.AddWithValue("@mois_fin", monthEnd);
+            
+            await using var transReader = await transCmd.ExecuteReaderAsync();
+            while (await transReader.ReadAsync())
+            {
+                var cat = transReader.GetString(0).Trim();
+                if (!string.IsNullOrWhiteSpace(cat))
+                    transactionCategories.Add(cat);
+            }
+            await transReader.CloseAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Erreur lors de la récupération des catégories de transactions: {ex.Message}");
+        }
+        
+        // Récupérer aussi les catégories créées en BD (celles qui ont un budget défini)
+        var bdCategories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            await using var bdCmd = connection.CreateCommand();
+            bdCmd.CommandText = @"SELECT DISTINCT nom_categorie
+                                 FROM catégorie
+                                 WHERE id_utilisateur = @id_utilisateur
+                                   AND LOWER(TRIM(nom_categorie)) != 'salaire'";
+            bdCmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+            
+            await using var bdReader = await bdCmd.ExecuteReaderAsync();
+            while (await bdReader.ReadAsync())
+            {
+                var cat = bdReader.GetString(0).Trim();
+                if (!string.IsNullOrWhiteSpace(cat))
+                    bdCategories.Add(cat);
+            }
+            await bdReader.CloseAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Erreur lors de la récupération des catégories en BD: {ex.Message}");
+        }
+        
+        // Combiner toutes les catégories en utilisant un HashSet pour éviter les doublons
+        // Utiliser une clé de normalisation stricte (trim + lowercase)
+        var allCategoriesSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var categoryMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); // normalisé -> nom original
+        
+        // Fonction helper pour normaliser
+        string Normalize(string name) => name?.Trim().ToLowerInvariant() ?? string.Empty;
+        
+        // Ajouter les catégories par défaut
+        foreach (var cat in defaultCategories)
+        {
+            var normalized = Normalize(cat);
+            if (!string.IsNullOrWhiteSpace(normalized) && !allCategoriesSet.Contains(normalized))
+            {
+                allCategoriesSet.Add(normalized);
+                categoryMapping[normalized] = cat.Trim(); // Garder le nom original
+            }
+        }
+        
+        // Ajouter les catégories des transactions
+        foreach (var cat in transactionCategories)
+        {
+            var normalized = Normalize(cat);
+            if (!string.IsNullOrWhiteSpace(normalized) && !allCategoriesSet.Contains(normalized))
+            {
+                allCategoriesSet.Add(normalized);
+                if (!categoryMapping.ContainsKey(normalized))
+                    categoryMapping[normalized] = cat.Trim(); // Garder le nom original
+            }
+        }
+        
+        // Ajouter les catégories en BD
+        foreach (var cat in bdCategories)
+        {
+            var normalized = Normalize(cat);
+            if (!string.IsNullOrWhiteSpace(normalized) && !allCategoriesSet.Contains(normalized))
+            {
+                allCategoriesSet.Add(normalized);
+                if (!categoryMapping.ContainsKey(normalized))
+                    categoryMapping[normalized] = cat.Trim(); // Garder le nom original
+            }
+        }
+        
+        // Convertir en liste en préservant l'ordre : catégories par défaut d'abord, puis les autres
+        var allCategories = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        
+        // D'abord les catégories par défaut (dans l'ordre)
+        foreach (var cat in defaultCategories)
+        {
+            var normalized = Normalize(cat);
+            if (allCategoriesSet.Contains(normalized) && !seen.Contains(normalized))
+            {
+                allCategories.Add(categoryMapping[normalized]);
+                seen.Add(normalized);
+            }
+        }
+        
+        // Ensuite les autres catégories (transactions + BD)
+        foreach (var normalized in allCategoriesSet)
+        {
+            if (!seen.Contains(normalized) && categoryMapping.ContainsKey(normalized))
+            {
+                allCategories.Add(categoryMapping[normalized]);
+                seen.Add(normalized);
+            }
+        }
+        
+        System.Diagnostics.Debug.WriteLine($"GetCategoryBudgetsAsync: {allCategories.Count} catégories trouvées (défaut: {defaultCategories.Length}, transactions: {transactionCategories.Count}, BD: {bdCategories.Count})");
+        Console.WriteLine($"📊 GetCategoryBudgetsAsync: {allCategories.Count} catégories trouvées (défaut: {defaultCategories.Length}, transactions: {transactionCategories.Count}, BD: {bdCategories.Count})");
+        
+        // S'assurer qu'on a au moins les catégories par défaut
+        if (allCategories.Count == 0)
+        {
+            System.Diagnostics.Debug.WriteLine("GetCategoryBudgetsAsync: Aucune catégorie trouvée, utilisation des catégories par défaut uniquement");
+            allCategories = defaultCategories.ToList();
+        }
+        
+        // Pour chaque catégorie, récupérer les dépenses et le budget (si défini)
+        // Utiliser un HashSet pour éviter les doublons dans la liste finale
+        var seenInList = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        System.Diagnostics.Debug.WriteLine($"GetCategoryBudgetsAsync: Liste allCategories contient {allCategories.Count} éléments");
+        foreach (var categoryName in allCategories)
+        {
+            // Normaliser le nom (trim + lowercase pour comparaison)
+            var normalizedName = categoryName?.Trim() ?? string.Empty;
+            var normalizedForComparison = normalizedName.ToLowerInvariant();
+            
+            System.Diagnostics.Debug.WriteLine($"GetCategoryBudgetsAsync: Traitement de '{categoryName}' (normalisé: '{normalizedForComparison}')");
+            
+            // Éviter les doublons (au cas où)
+            if (string.IsNullOrWhiteSpace(normalizedName))
+            {
+                System.Diagnostics.Debug.WriteLine($"GetCategoryBudgetsAsync: Nom vide ignoré");
+                continue;
+            }
+            
+            if (seenInList.Contains(normalizedForComparison))
+            {
+                System.Diagnostics.Debug.WriteLine($"GetCategoryBudgetsAsync: ⚠️ DOUBLON DÉTECTÉ ET IGNORÉ: '{categoryName}' (normalisé: '{normalizedForComparison}')");
+                Console.WriteLine($"⚠️ DOUBLON DÉTECTÉ ET IGNORÉ: '{categoryName}' (normalisé: '{normalizedForComparison}')");
+                continue;
+            }
+            seenInList.Add(normalizedForComparison);
+            System.Diagnostics.Debug.WriteLine($"GetCategoryBudgetsAsync: Ajout de '{normalizedName}' à la liste");
+            // Récupérer les dépenses pour cette catégorie
+            double depense = 0;
+            try
+            {
+                await using var depenseCmd = connection.CreateCommand();
+                depenseCmd.CommandText = @"SELECT COALESCE(SUM(ABS(montant)), 0)
+                                          FROM depense
+                                          WHERE id_utilisateur = @id_utilisateur
+                                            AND date_depense >= @mois_debut
+                                            AND date_depense <= @mois_fin
+                                            AND LOWER(TRIM(SUBSTRING_INDEX(description, ' - ', -1))) = LOWER(TRIM(@categorie))";
+                depenseCmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+                depenseCmd.Parameters.AddWithValue("@mois_debut", monthStart);
+                depenseCmd.Parameters.AddWithValue("@mois_fin", monthEnd);
+                depenseCmd.Parameters.AddWithValue("@categorie", normalizedName);
+                
+                depense = Convert.ToDouble(await depenseCmd.ExecuteScalarAsync() ?? 0);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur lors du calcul des dépenses pour {categoryName}: {ex.Message}");
+            }
+            
+            // Récupérer le budget si la catégorie existe en BD et a un budget défini
+            double limite = 0;
+            int idCategorie = 0;
+            
+            try
+            {
+                await using var budgetCmd = connection.CreateCommand();
+                budgetCmd.CommandText = @"SELECT MIN(c.id_categorie), COALESCE(MAX(a.limite_categorie), 0)
+                                         FROM catégorie c
+                                         LEFT JOIN attribuer a ON c.id_categorie = a.id_categorie AND a.id_budget = @id_budget
+                                         WHERE c.id_utilisateur = @id_utilisateur
+                                           AND LOWER(TRIM(c.nom_categorie)) = LOWER(TRIM(@categorie))";
+                budgetCmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+                budgetCmd.Parameters.AddWithValue("@id_budget", budgetId);
+                budgetCmd.Parameters.AddWithValue("@categorie", normalizedName);
+                
+                await using var budgetReader = await budgetCmd.ExecuteReaderAsync();
+                if (await budgetReader.ReadAsync())
+                {
+                    idCategorie = budgetReader.GetInt32(0);
+                    limite = budgetReader.IsDBNull(1) ? 0 : budgetReader.GetDouble(1);
+                }
+                await budgetReader.CloseAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur lors de la récupération du budget pour {categoryName}: {ex.Message}");
+            }
+            
+            list.Add(new BudgetCategorie
+            {
+                IdCategorie = idCategorie, // 0 si la catégorie n'existe pas encore en BD
+                NomCategorie = normalizedName, // Utiliser le nom normalisé
+                IdBudget = budgetId,
+                LimiteCategorie = limite,
+                Depense = depense,
+                Icone = GetCategoryIcon(normalizedName),
+                Couleur = GetCategoryColor(normalizedName)
+            });
+            
+            System.Diagnostics.Debug.WriteLine($"GetCategoryBudgetsAsync: Catégorie ajoutée à la liste: '{normalizedName}' (ID: {idCategorie}, Limite: {limite}, Dépense: {depense})");
+        }
+        
+        // Trier : celles sans budget en haut, celles avec budget en bas
+        var result = list.OrderBy(b => b.LimiteCategorie > 0 ? 1 : 0)
+                   .ThenBy(b => b.NomCategorie)
+                   .ToList();
+        
+        // Vérifier les doublons dans le résultat final
+        var duplicates = result.GroupBy(b => b.NomCategorie.ToLowerInvariant().Trim())
+                              .Where(g => g.Count() > 1)
+                              .ToList();
+        if (duplicates.Any())
+        {
+            System.Diagnostics.Debug.WriteLine($"⚠️ DOUBLONS DÉTECTÉS DANS LE RÉSULTAT FINAL:");
+            Console.WriteLine($"⚠️⚠️⚠️ DOUBLONS DÉTECTÉS DANS LE RÉSULTAT FINAL:");
+            foreach (var dup in duplicates)
+            {
+                System.Diagnostics.Debug.WriteLine($"  - '{dup.Key}': {dup.Count()} occurrences");
+                Console.WriteLine($"  - '{dup.Key}': {dup.Count()} occurrences");
+                foreach (var item in dup)
+                {
+                    System.Diagnostics.Debug.WriteLine($"    * ID: {item.IdCategorie}, Limite: {item.LimiteCategorie}, Dépense: {item.Depense}");
+                    Console.WriteLine($"    * ID: {item.IdCategorie}, Limite: {item.LimiteCategorie}, Dépense: {item.Depense}");
+                }
+            }
+            
+            // Supprimer les doublons en gardant le premier de chaque groupe
+            var uniqueResult = new List<BudgetCategorie>();
+            var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var item in result)
+            {
+                var normalized = item.NomCategorie.ToLowerInvariant().Trim();
+                if (!seenNames.Contains(normalized))
+                {
+                    uniqueResult.Add(item);
+                    seenNames.Add(normalized);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"  → Suppression du doublon: '{item.NomCategorie}' (ID: {item.IdCategorie})");
+                }
+            }
+            result = uniqueResult.OrderBy(b => b.LimiteCategorie > 0 ? 1 : 0)
+                                 .ThenBy(b => b.NomCategorie)
+                                 .ToList();
+        }
+        
+        System.Diagnostics.Debug.WriteLine($"GetCategoryBudgetsAsync: {result.Count} catégories retournées (après suppression des doublons)");
+        Console.WriteLine($"✅ GetCategoryBudgetsAsync: {result.Count} catégories retournées (après suppression des doublons)");
+        return result;
+    }
+
+    /// <summary>
+    /// Met à jour le budget d'une catégorie
+    /// Crée la catégorie en BD si elle n'existe pas encore
+    /// </summary>
+    public static async Task<bool> UpdateCategoryBudgetAsync(string email, string nomCategorie, double limite, DateTime month)
+    {
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) return false;
+        
+        var budgetId = await GetOrCreateMonthlyBudgetIdAsync(email, month);
+
+        await using var connection = await OpenConnectionAsync();
+        
+        // Vérifier si la colonne limite_categorie existe, sinon l'ajouter
+        await using var checkCmd = connection.CreateCommand();
+        checkCmd.CommandText = @"SELECT COUNT(*) FROM information_schema.COLUMNS 
+                                WHERE TABLE_SCHEMA = DATABASE() 
+                                AND TABLE_NAME = 'attribuer' 
+                                AND COLUMN_NAME = 'limite_categorie'";
+        var columnExists = Convert.ToInt32(await checkCmd.ExecuteScalarAsync()) > 0;
+        
+        if (!columnExists)
+        {
+            await using var alterCmd = connection.CreateCommand();
+            alterCmd.CommandText = @"ALTER TABLE attribuer ADD COLUMN limite_categorie DOUBLE DEFAULT NULL";
+            await alterCmd.ExecuteNonQueryAsync();
+        }
+        
+        // Récupérer ou créer la catégorie (en utilisant GetOrCreateCategoryAsync pour éviter les doublons)
+        int idCategorie;
+        try
+        {
+            idCategorie = await GetOrCreateCategoryAsync(email, nomCategorie);
+        }
+        catch
+        {
+            // Si GetOrCreateCategoryAsync échoue, essayer de récupérer l'ID existant
+            await using var catCmd = connection.CreateCommand();
+            catCmd.CommandText = @"SELECT MIN(id_categorie) FROM catégorie 
+                                  WHERE id_utilisateur = @id_utilisateur 
+                                  AND LOWER(TRIM(nom_categorie)) = LOWER(TRIM(@nom_categorie))";
+            catCmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+            catCmd.Parameters.AddWithValue("@nom_categorie", nomCategorie.Trim());
+            
+            var existingId = await catCmd.ExecuteScalarAsync();
+            if (existingId != null)
+            {
+                idCategorie = Convert.ToInt32(existingId);
+            }
+            else
+            {
+                throw new Exception("Impossible de créer ou récupérer la catégorie");
+            }
+        }
+        
+        // Insérer ou mettre à jour le budget
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"INSERT INTO attribuer (id_categorie, id_budget, limite_categorie) 
+                            VALUES (@id_categorie, @id_budget, @limite) 
+                            ON DUPLICATE KEY UPDATE limite_categorie = @limite";
+        cmd.Parameters.AddWithValue("@id_categorie", idCategorie);
+        cmd.Parameters.AddWithValue("@id_budget", budgetId);
+        cmd.Parameters.AddWithValue("@limite", limite);
+        
+        var rows = await cmd.ExecuteNonQueryAsync();
+        return rows > 0;
+    }
+
+    // ==================== GESTION DES REVENUS ====================
+
+    /// <summary>
+    /// Modèle pour un revenu
+    /// </summary>
+    public class Revenu
+    {
+        public int IdRevenu { get; set; }
+        public int IdUtilisateur { get; set; }
+        public DateTime Mois { get; set; }
+        public double Montant { get; set; }
+        public string Libelle { get; set; } = string.Empty;
+        public DateTime DateCreation { get; set; }
+    }
+
+    /// <summary>
+    /// Récupère le total des revenus pour un mois donné
+    /// </summary>
+    public static async Task<double> GetTotalRevenusAsync(string email, DateTime month)
+    {
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) return 0;
+
+        var monthStart = new DateTime(month.Year, month.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+        
+        await using var connection = await OpenConnectionAsync();
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"SELECT COALESCE(SUM(montant), 0) FROM revenu 
+                            WHERE id_utilisateur = @id_utilisateur
+                            AND mois >= @mois_debut AND mois <= @mois_fin";
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        cmd.Parameters.AddWithValue("@mois_debut", monthStart);
+        cmd.Parameters.AddWithValue("@mois_fin", monthEnd);
+        
+        var result = await cmd.ExecuteScalarAsync();
+        return result != null ? Convert.ToDouble(result) : 0;
+    }
+
+    /// <summary>
+    /// Récupère tous les revenus pour un mois donné
+    /// </summary>
+    public static async Task<List<Revenu>> GetRevenusAsync(string email, DateTime month)
+    {
+        var list = new List<Revenu>();
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) return list;
+
+        var monthStart = new DateTime(month.Year, month.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+        
+        await using var connection = await OpenConnectionAsync();
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"SELECT id_revenu, id_utilisateur, mois, montant, libelle, date_creation
+                            FROM revenu 
+                            WHERE id_utilisateur = @id_utilisateur
+                            AND mois >= @mois_debut AND mois <= @mois_fin
+                            ORDER BY date_creation DESC";
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        cmd.Parameters.AddWithValue("@mois_debut", monthStart);
+        cmd.Parameters.AddWithValue("@mois_fin", monthEnd);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new Revenu
+            {
+                IdRevenu = reader.GetInt32(0),
+                IdUtilisateur = reader.GetInt32(1),
+                Mois = reader.GetDateTime(2),
+                Montant = reader.GetDouble(3),
+                Libelle = reader.IsDBNull(4) ? "Salaire" : reader.GetString(4),
+                DateCreation = reader.GetDateTime(5)
+            });
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// Ajoute un revenu (salaire ou revenu supplémentaire)
+    /// </summary>
+    public static async Task<int> AddRevenuAsync(string email, double montant, DateTime month, string libelle = "Salaire")
+    {
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) throw new Exception("Utilisateur introuvable");
+
+        var monthStart = new DateTime(month.Year, month.Month, 1);
+        
+        await using var connection = await OpenConnectionAsync();
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"INSERT INTO revenu (id_utilisateur, mois, montant, libelle, date_creation) 
+                            VALUES (@id_utilisateur, @mois, @montant, @libelle, NOW());
+                            SELECT LAST_INSERT_ID();";
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        cmd.Parameters.AddWithValue("@mois", monthStart);
+        cmd.Parameters.AddWithValue("@montant", montant);
+        cmd.Parameters.AddWithValue("@libelle", libelle);
+        
+        var result = await cmd.ExecuteScalarAsync();
+        return Convert.ToInt32(result);
+    }
+
+    /// <summary>
+    /// Met à jour un revenu existant
+    /// </summary>
+    public static async Task<bool> UpdateRevenuAsync(string email, int idRevenu, double montant, string libelle)
+    {
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) return false;
+
+        await using var connection = await OpenConnectionAsync();
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"UPDATE revenu 
+                            SET montant = @montant, libelle = @libelle
+                            WHERE id_revenu = @id_revenu AND id_utilisateur = @id_utilisateur";
+        cmd.Parameters.AddWithValue("@id_revenu", idRevenu);
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        cmd.Parameters.AddWithValue("@montant", montant);
+        cmd.Parameters.AddWithValue("@libelle", libelle);
+        
+        var rows = await cmd.ExecuteNonQueryAsync();
+        return rows > 0;
+    }
+
+    /// <summary>
+    /// Supprime un revenu
+    /// </summary>
+    public static async Task<bool> DeleteRevenuAsync(string email, int idRevenu)
+    {
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) return false;
+
+        await using var connection = await OpenConnectionAsync();
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"DELETE FROM revenu 
+                            WHERE id_revenu = @id_revenu AND id_utilisateur = @id_utilisateur";
+        cmd.Parameters.AddWithValue("@id_revenu", idRevenu);
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        var rows = await cmd.ExecuteNonQueryAsync();
+        return rows > 0;
+    }
+
+    /// <summary>
+    /// Supprime une catégorie (supprime d'abord les entrées liées dans attribuer)
+    /// Supprime toutes les catégories avec le même nom pour cet utilisateur pour éviter les doublons
+    /// </summary>
+    public static async Task<bool> DeleteCategoryAsync(string email, int idCategorie)
+    {
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) return false;
+
+        await using var connection = await OpenConnectionAsync();
+        
+        // Récupérer le nom de la catégorie avant de la supprimer
+        await using var cmdGetName = connection.CreateCommand();
+        cmdGetName.CommandText = @"SELECT nom_categorie FROM catégorie 
+                                   WHERE id_categorie = @id_categorie AND id_utilisateur = @id_utilisateur";
+        cmdGetName.Parameters.AddWithValue("@id_categorie", idCategorie);
+        cmdGetName.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        var categoryName = await cmdGetName.ExecuteScalarAsync() as string;
+        if (string.IsNullOrEmpty(categoryName)) return false;
+        
+        // Désactiver temporairement les contraintes
+        await using var cmdDisable = connection.CreateCommand();
+        cmdDisable.CommandText = "SET FOREIGN_KEY_CHECKS = 0";
+        await cmdDisable.ExecuteNonQueryAsync();
+
+        try
+        {
+            // Récupérer tous les IDs de catégories avec le même nom pour cet utilisateur
+            await using var cmdGetIds = connection.CreateCommand();
+            cmdGetIds.CommandText = @"SELECT id_categorie FROM catégorie 
+                                     WHERE LOWER(nom_categorie) = LOWER(@nom_categorie) 
+                                     AND id_utilisateur = @id_utilisateur";
+            cmdGetIds.Parameters.AddWithValue("@nom_categorie", categoryName);
+            cmdGetIds.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+            
+            var categoryIds = new List<int>();
+            await using var reader = await cmdGetIds.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                categoryIds.Add(reader.GetInt32(0));
+            }
+            await reader.CloseAsync();
+            
+            if (categoryIds.Count == 0) return false;
+            
+            // Supprimer toutes les entrées dans attribuer qui référencent ces catégories
+            foreach (var catId in categoryIds)
+            {
+                await using var cmdAttribuer = connection.CreateCommand();
+                cmdAttribuer.CommandText = @"DELETE FROM attribuer WHERE id_categorie = @id_categorie";
+                cmdAttribuer.Parameters.AddWithValue("@id_categorie", catId);
+                await cmdAttribuer.ExecuteNonQueryAsync();
+            }
+
+            // Supprimer toutes les catégories avec le même nom
+            await using var cmd = connection.CreateCommand();
+            cmd.CommandText = @"DELETE FROM catégorie 
+                                WHERE LOWER(nom_categorie) = LOWER(@nom_categorie) 
+                                AND id_utilisateur = @id_utilisateur";
+            cmd.Parameters.AddWithValue("@nom_categorie", categoryName);
+            cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+            
+            var rows = await cmd.ExecuteNonQueryAsync();
+            return rows > 0;
+        }
+        finally
+        {
+            // Réactiver les contraintes
+            await using var cmdEnable = connection.CreateCommand();
+            cmdEnable.CommandText = "SET FOREIGN_KEY_CHECKS = 1";
+            await cmdEnable.ExecuteNonQueryAsync();
+        }
+    }
+
+    /// <summary>
+    /// Met à jour le nom d'une catégorie
+    /// </summary>
+    public static async Task<bool> UpdateCategoryNameAsync(string email, int idCategorie, string newName)
+    {
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) return false;
+
+        await using var connection = await OpenConnectionAsync();
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"UPDATE catégorie 
+                            SET nom_categorie = @nom_categorie 
+                            WHERE id_categorie = @id_categorie AND id_utilisateur = @id_utilisateur";
+        cmd.Parameters.AddWithValue("@id_categorie", idCategorie);
+        cmd.Parameters.AddWithValue("@nom_categorie", newName);
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        var rows = await cmd.ExecuteNonQueryAsync();
+        return rows > 0;
+    }
+
+    /// <summary>
+    /// Vérifie si une dépense dépasse le budget pour une catégorie
+    /// Retourne les informations sur le budget (limite, dépense actuelle, nouveau total)
+    /// </summary>
+    public static async Task<(bool WillExceed, double BudgetLimit, double CurrentSpent, double NewTotal, string CategoryName)> CheckBudgetExceedanceAsync(
+        string email, string categoryName, double amount, DateTime transactionDate, int? existingTransactionId = null)
+    {
+        var user = await GetUserByEmailAsync(email);
+        if (user == null) return (false, 0, 0, 0, categoryName);
+
+        var budgetId = await GetOrCreateMonthlyBudgetIdAsync(email, transactionDate);
+        var monthStart = new DateTime(transactionDate.Year, transactionDate.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+        await using var connection = await OpenConnectionAsync();
+        await using var cmd = connection.CreateCommand();
+        
+        // Récupérer le budget de la catégorie (si elle existe en BD) et les dépenses actuelles
+        cmd.CommandText = @"SELECT 
+                                COALESCE(a.limite_categorie, 0) as limite,
+                                COALESCE((
+                                    SELECT SUM(ABS(d2.montant))
+                                    FROM depense d2
+                                    WHERE d2.id_utilisateur = @id_utilisateur
+                                      AND LOWER(TRIM(SUBSTRING_INDEX(d2.description, ' - ', -1))) = LOWER(TRIM(@nom_categorie))
+                                      AND d2.date_depense >= @mois_debut
+                                      AND d2.date_depense <= @mois_fin
+                                      AND LOWER(TRIM(SUBSTRING_INDEX(d2.description, ' - ', -1))) != 'salaire'
+                                      " + (existingTransactionId.HasValue ? "AND d2.id_depense != @existing_id" : "") + @"
+                                ), 0) as depense_actuelle
+                            FROM catégorie c
+                            LEFT JOIN attribuer a ON c.id_categorie = a.id_categorie AND a.id_budget = @id_budget
+                            WHERE c.id_utilisateur = @id_utilisateur
+                              AND LOWER(TRIM(c.nom_categorie)) = LOWER(TRIM(@nom_categorie))
+                            LIMIT 1";
+        
+        cmd.Parameters.AddWithValue("@id_budget", budgetId);
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        cmd.Parameters.AddWithValue("@nom_categorie", categoryName);
+        cmd.Parameters.AddWithValue("@mois_debut", monthStart);
+        cmd.Parameters.AddWithValue("@mois_fin", monthEnd);
+        if (existingTransactionId.HasValue)
+        {
+            cmd.Parameters.AddWithValue("@existing_id", existingTransactionId.Value);
+        }
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            var limite = reader.IsDBNull(0) ? 0 : reader.GetDouble(0);
+            var depenseActuelle = reader.GetDouble(1);
+            var nouveauTotal = depenseActuelle + Math.Abs(amount);
+            var willExceed = limite > 0 && nouveauTotal > limite;
+
+            return (willExceed, limite, depenseActuelle, nouveauTotal, categoryName);
+        }
+
+        return (false, 0, 0, Math.Abs(amount), categoryName);
+    }
+
+    /// <summary>
+    /// Récupère l'icône pour une catégorie
+    /// </summary>
+    private static string GetCategoryIcon(string category)
+    {
+        return category.ToLower() switch
+        {
+            var c when c.Contains("logement") || c.Contains("loyer") => "🏠",
+            var c when c.Contains("alimentation") || c.Contains("courses") || c.Contains("nourriture") => "🍽️",
+            var c when c.Contains("transport") || c.Contains("voiture") || c.Contains("essence") => "🚗",
+            var c when c.Contains("loisir") || c.Contains("divertissement") => "🎮",
+            var c when c.Contains("facture") || c.Contains("électricité") || c.Contains("eau") => "💡",
+            var c when c.Contains("santé") || c.Contains("médical") => "⚕️",
+            var c when c.Contains("salaire") || c.Contains("revenu") => "💰",
+            var c when c.Contains("shopping") || c.Contains("vêtement") => "🛍️",
+            _ => "📊"
+        };
+    }
+
+    /// <summary>
+    /// Récupère la couleur pour une catégorie
+    /// </summary>
+    private static string GetCategoryColor(string category)
+    {
+        return category.ToLower() switch
+        {
+            var c when c.Contains("logement") => "#E67E22", // Orange
+            var c when c.Contains("alimentation") => "#27AE60", // Vert
+            var c when c.Contains("transport") => "#F39C12", // Jaune-orange
+            var c when c.Contains("loisir") => "#9B59B6", // Violet
+            var c when c.Contains("facture") => "#E74C3C", // Rouge
+            var c when c.Contains("santé") => "#1ABC9C", // Turquoise
+            var c when c.Contains("salaire") || c.Contains("revenu") => "#F1C40F", // Jaune doré
+            _ => "#3498DB" // Bleu par défaut
+        };
+    }
+
+    /// <summary>
+    /// Crée les catégories par défaut pour un utilisateur s'il n'en a pas encore
+    /// </summary>
 }
 
 public readonly record struct RegistrationResult(bool IsSuccess, string? ErrorMessage, bool EmailExists)

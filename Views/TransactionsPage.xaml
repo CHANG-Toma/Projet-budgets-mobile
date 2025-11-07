@@ -330,18 +330,7 @@
                                                     TextColor="#2C3E50"
                                                     Title=""
                                                     FontSize="16"
-                                                    SelectedIndexChanged="OnCategorySelected">
-                                                <Picker.ItemsSource>
-                                                    <x:Array Type="{x:Type x:String}">
-                                                        <x:String>Alimentation</x:String>
-                                                        <x:String>Transport</x:String>
-                                                        <x:String>Logement</x:String>
-                                                        <x:String>Santé</x:String>
-                                                        <x:String>Loisirs</x:String>
-                                                        <x:String>Autres</x:String>
-                                                    </x:Array>
-                                                </Picker.ItemsSource>
-                                            </Picker>
+                                                    SelectedIndexChanged="OnCategorySelected" />
                                             <Label Text="▼"
                                                    Grid.Column="2"
                                                    FontSize="12"

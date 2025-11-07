@@ -1,151 +1,325 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:Projet_Budget_M1.ViewModels"
              x:Class="Projet_Budget_M1.Views.BudgetPage"
-             Title="Budget"
+             x:DataType="viewmodels:BudgetViewModel"
+             Title="Budget mensuel"
              BackgroundColor="#F5F5F5">
 
-    <Grid RowDefinitions="*,Auto">
+    <Grid RowDefinitions="Auto,*,Auto">
+        
+        <!-- Indicateur de chargement -->
+        <ActivityIndicator Grid.Row="0"
+                          Grid.RowSpan="3"
+                          IsRunning="{Binding IsLoading}"
+                          IsVisible="{Binding IsLoading}"
+                          Color="#3498DB"
+                          VerticalOptions="Center"
+                          HorizontalOptions="Center" />
+
+        <!-- Header avec titre et sélecteur de mois -->
+        <VerticalStackLayout Grid.Row="0" Padding="20,20,20,15" Spacing="15">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0" 
+                        Text="←" 
+                        FontSize="24" 
+                        TextColor="#2C3E50"
+                        BackgroundColor="Transparent"
+                        Command="{Binding PreviousMonthCommand}" />
+                <Label Grid.Column="1" 
+                       Text="{Binding MonthLabel}" 
+                       FontSize="24" 
+                       FontAttributes="Bold" 
+                       TextColor="#2C3E50" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="2" 
+                        Text="→" 
+                        FontSize="24" 
+                        TextColor="#2C3E50"
+                        BackgroundColor="Transparent"
+                        Command="{Binding NextMonthCommand}" />
+            </Grid>
+        </VerticalStackLayout>
+
         <!-- Contenu principal -->
-        <ScrollView Grid.Row="0">
-            <VerticalStackLayout HorizontalOptions="Center"
-                                 VerticalOptions="Center"
-                                 Spacing="20"
-                                 Padding="20">
-                <Label Text="💰"
-                       FontSize="60"
-                       HorizontalOptions="Center" />
-                <Label Text="Budget"
-                       FontSize="24"
-                       FontAttributes="Bold"
-                       TextColor="#2C3E50"
-                       HorizontalOptions="Center" />
-                <Label Text="Page en cours de développement"
-                       FontSize="16"
-                       TextColor="#7F8C8D"
-                       HorizontalOptions="Center" />
-            </VerticalStackLayout>
-        </ScrollView>
+        <RefreshView Grid.Row="1" 
+                     Command="{Binding RefreshCommand}"
+                     IsRefreshing="{Binding IsLoading}">
+            <ScrollView Padding="20,0,20,10">
+                <VerticalStackLayout Spacing="20">
+                    
+                    <!-- Carte Salaire -->
+                    <Frame BackgroundColor="White" CornerRadius="20" Padding="25" HasShadow="True">
+                        <VerticalStackLayout Spacing="15">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                <VerticalStackLayout Grid.Column="0" Spacing="5">
+                                    <Label Text="💰 Salaire mensuel" FontSize="14" TextColor="#7F8C8D" />
+                                    <Label Text="{Binding SalaryText}" 
+                                           FontSize="24" 
+                                           FontAttributes="Bold" 
+                                           TextColor="#2C3E50" />
+                                </VerticalStackLayout>
+                                <Button Grid.Column="1" 
+                                        Text="✏️" 
+                                        FontSize="18" 
+                                        BackgroundColor="Transparent" 
+                                        TextColor="#3498DB" 
+                                        Padding="8" 
+                                        WidthRequest="40" 
+                                        HeightRequest="40"
+                                        Command="{Binding EditSalaryCommand}" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Carte Budget Total -->
+                    <Frame BackgroundColor="White" CornerRadius="20" Padding="25" HasShadow="True">
+                        <VerticalStackLayout Spacing="15">
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="20">
+                                <!-- Budget total -->
+                                <VerticalStackLayout Grid.Column="0" Spacing="5">
+                                    <Label Text="Budget total" FontSize="14" TextColor="#7F8C8D" />
+                                    <Label Text="{Binding TotalBudgetText}" 
+                                           FontSize="24" 
+                                           FontAttributes="Bold" 
+                                           TextColor="#2C3E50" />
+                                </VerticalStackLayout>
+                                <!-- Dépensé -->
+                                <VerticalStackLayout Grid.Column="1" Spacing="5" HorizontalOptions="End">
+                                    <Label Text="Dépensé" FontSize="14" TextColor="#7F8C8D" HorizontalTextAlignment="End" />
+                                    <Label Text="{Binding TotalSpentText}" 
+                                           FontSize="24" 
+                                           FontAttributes="Bold" 
+                                           TextColor="#E74C3C" 
+                                           HorizontalTextAlignment="End" />
+                                </VerticalStackLayout>
+                            </Grid>
+                            
+                            <!-- Épargne -->
+                            <HorizontalStackLayout Spacing="5">
+                                <Label Text="💾" FontSize="16" VerticalOptions="Center" />
+                                <Label Text="Épargne:" FontSize="14" TextColor="#7F8C8D" VerticalOptions="Center" />
+                                <Label Text="{Binding SavingsText}" 
+                                       FontSize="16" 
+                                       FontAttributes="Bold" 
+                                       TextColor="{Binding SavingsColor}" 
+                                       VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+
+                            <!-- Barre de progression -->
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="Progression" FontSize="14" TextColor="#7F8C8D" />
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                    <Frame Grid.Column="0" 
+                                           BackgroundColor="#ECF0F1" 
+                                           CornerRadius="10" 
+                                           Padding="0" 
+                                           HeightRequest="20" 
+                                           HasShadow="False">
+                                        <Frame BackgroundColor="{Binding ProgressBarColor}" 
+                                               CornerRadius="10" 
+                                               Padding="0" 
+                                               HorizontalOptions="Start" 
+                                               WidthRequest="{Binding ProgressBarWidth}" 
+                                               HasShadow="False" />
+                                    </Frame>
+                                    <Label Grid.Column="1" 
+                                           Text="{Binding ProgressPercentageText}" 
+                                           FontSize="14" 
+                                           FontAttributes="Bold" 
+                                           TextColor="#2C3E50" 
+                                           VerticalOptions="Center" />
+                                </Grid>
+                            </VerticalStackLayout>
+
+                            <!-- Reste disponible -->
+                            <HorizontalStackLayout Spacing="5">
+                                <Label Text="📈" FontSize="16" VerticalOptions="Center" />
+                                <Label Text="Reste disponible:" FontSize="14" TextColor="#7F8C8D" VerticalOptions="Center" />
+                                <Label Text="{Binding RemainingText}" 
+                                       FontSize="16" 
+                                       FontAttributes="Bold" 
+                                       TextColor="{Binding RemainingColor}" 
+                                       VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Budget par catégorie -->
+                    <VerticalStackLayout Spacing="15">
+                        <HorizontalStackLayout Spacing="10">
+                            <Label Text="Budget par catégorie" 
+                                   FontSize="18" 
+                                   FontAttributes="Bold" 
+                                   TextColor="#2C3E50" 
+                                   VerticalOptions="Center" />
+                            <Button Text="+" 
+                                    FontSize="18" 
+                                    FontAttributes="Bold" 
+                                    WidthRequest="30" 
+                                    HeightRequest="30" 
+                                    CornerRadius="15" 
+                                    BackgroundColor="#27AE60" 
+                                    TextColor="White" 
+                                    Padding="0"
+                                    Clicked="OnAddCategoryClicked" />
+                        </HorizontalStackLayout>
+
+                        <!-- Liste des catégories -->
+                        <CollectionView ItemsSource="{Binding Categories}">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="viewmodels:BudgetCategorieViewModel">
+                                    <Frame BackgroundColor="White" 
+                                           CornerRadius="16" 
+                                           Padding="20" 
+                                           HasShadow="True"
+                                           Margin="0,0,0,12">
+                                        <VerticalStackLayout Spacing="12">
+                                            
+                                            <!-- Ligne 1: Nom + icône + boutons -->
+                                            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="5">
+                                                <Label Grid.Column="0" 
+                                                       Text="{Binding Icone}" 
+                                                       FontSize="24" 
+                                                       VerticalOptions="Center" />
+                                                <Label Grid.Column="1" 
+                                                       Text="{Binding NomCategorie}" 
+                                                       FontSize="18" 
+                                                       FontAttributes="Bold" 
+                                                       TextColor="#2C3E50" 
+                                                       VerticalOptions="Center" />
+                                                <Button Grid.Column="2" 
+                                                        Text="💰" 
+                                                        FontSize="16" 
+                                                        BackgroundColor="Transparent" 
+                                                        TextColor="#3498DB" 
+                                                        Padding="5" 
+                                                        WidthRequest="35" 
+                                                        HeightRequest="35"
+                                                        Command="{Binding EditBudgetCommand}" 
+                                                        ToolTipProperties.Text="Modifier le budget" />
+                                                <Button Grid.Column="3" 
+                                                        Text="✏️" 
+                                                        FontSize="14" 
+                                                        BackgroundColor="Transparent" 
+                                                        TextColor="#F39C12" 
+                                                        Padding="5" 
+                                                        WidthRequest="35" 
+                                                        HeightRequest="35"
+                                                        Command="{Binding EditCategoryNameCommand}" 
+                                                        ToolTipProperties.Text="Modifier le nom" />
+                                                <Button Grid.Column="4" 
+                                                        Text="🗑️" 
+                                                        FontSize="14" 
+                                                        BackgroundColor="Transparent" 
+                                                        TextColor="#E74C3C" 
+                                                        Padding="5" 
+                                                        WidthRequest="35" 
+                                                        HeightRequest="35"
+                                                        Command="{Binding DeleteCategoryCommand}" 
+                                                        ToolTipProperties.Text="Supprimer" />
+                                            </Grid>
+
+                                            <!-- Ligne 2: Montants -->
+                                            <Label Text="{Binding MontantsText}" 
+                                                   FontSize="14" 
+                                                   TextColor="#7F8C8D" />
+
+                                            <!-- Ligne 3: Barre de progression + stats -->
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                                <Frame Grid.Column="0" 
+                                                       BackgroundColor="#ECF0F1" 
+                                                       CornerRadius="10" 
+                                                       Padding="0" 
+                                                       HeightRequest="20"
+                                                       WidthRequest="250"
+                                                       HasShadow="False">
+                                                    <Frame BackgroundColor="{Binding CouleurBarre}" 
+                                                           CornerRadius="10" 
+                                                           Padding="0" 
+                                                           HorizontalOptions="Start" 
+                                                           VerticalOptions="Fill"
+                                                           WidthRequest="{Binding BarreWidth}" 
+                                                           HeightRequest="20"
+                                                           HasShadow="False" />
+                                                </Frame>
+                                                <VerticalStackLayout Grid.Column="1" 
+                                                                    Spacing="2" 
+                                                                    VerticalOptions="Center">
+                                                    <Label Text="{Binding PourcentageText}" 
+                                                           FontSize="14" 
+                                                           FontAttributes="Bold" 
+                                                           TextColor="#2C3E50" />
+                                                    <Label Text="{Binding RestantText}" 
+                                                           FontSize="11" 
+                                                           TextColor="{Binding RestantColor}" />
+                                                </VerticalStackLayout>
+                                            </Grid>
+
+                                        </VerticalStackLayout>
+                                    </Frame>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
 
         <!-- Menu Footer -->
-        <Frame Grid.Row="1"
+        <Frame Grid.Row="2"
                BackgroundColor="White"
                CornerRadius="0"
                Padding="0"
                HasShadow="True"
                Margin="0"
+               VerticalOptions="End"
                BorderColor="#E0E0E0">
             <Grid ColumnDefinitions="*,*,*,*"
                   RowDefinitions="Auto"
                   Padding="8,10,8,10">
 
-                <!-- Accueil -->
-                <VerticalStackLayout Grid.Column="0"
-                                     HorizontalOptions="Center"
-                                     Spacing="4">
-                    <Frame WidthRequest="72"
-                           HeightRequest="72"
-                           CornerRadius="36"
-                           Padding="0"
-                           BackgroundColor="Transparent"
-                           HasShadow="False"
-                           VerticalOptions="Center"
-                           HorizontalOptions="Center">
-                        <Label Text="🏠"
-                               FontSize="36"
-                               VerticalOptions="Center"
-                               HorizontalOptions="Center"
-                               LineBreakMode="NoWrap" />
+                <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center" Spacing="4">
+                    <Frame WidthRequest="72" HeightRequest="72" CornerRadius="36" Padding="0" BackgroundColor="Transparent" HasShadow="False">
+                        <Label Text="🏠" FontSize="36" HorizontalOptions="Center" VerticalOptions="Center" />
                         <Frame.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnHomeTapped" NumberOfTapsRequired="1" />
+                            <TapGestureRecognizer Tapped="OnHomeTapped" />
                         </Frame.GestureRecognizers>
                     </Frame>
-                    <Label Text="Accueil"
-                           FontSize="12"
-                           TextColor="#7F8C8D"
-                           HorizontalOptions="Center" />
+                    <Label Text="Accueil" FontSize="12" TextColor="#7F8C8D" HorizontalOptions="Center" />
                 </VerticalStackLayout>
 
-                <!-- Transactions -->
-                <VerticalStackLayout Grid.Column="1"
-                                     HorizontalOptions="Center"
-                                     Spacing="4">
-                    <Frame WidthRequest="72"
-                           HeightRequest="72"
-                           CornerRadius="36"
-                           Padding="0"
-                           BackgroundColor="Transparent"
-                           HasShadow="False"
-                           VerticalOptions="Center"
-                           HorizontalOptions="Center">
-                        <Label Text="💳"
-                               FontSize="36"
-                               VerticalOptions="Center"
-                               HorizontalOptions="Center"
-                               LineBreakMode="NoWrap" />
+                <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center" Spacing="4">
+                    <Frame WidthRequest="72" HeightRequest="72" CornerRadius="36" Padding="0" BackgroundColor="Transparent" HasShadow="False">
+                        <Label Text="💳" FontSize="36" HorizontalOptions="Center" VerticalOptions="Center" />
                         <Frame.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnTransactionsTapped" NumberOfTapsRequired="1" />
+                            <TapGestureRecognizer Tapped="OnTransactionsTapped" />
                         </Frame.GestureRecognizers>
                     </Frame>
-                    <Label Text="Transactions"
-                           FontSize="12"
-                           TextColor="#7F8C8D"
-                           HorizontalOptions="Center" />
+                    <Label Text="Transactions" FontSize="12" TextColor="#7F8C8D" HorizontalOptions="Center" />
                 </VerticalStackLayout>
 
-                <!-- Statistiques -->
-                <VerticalStackLayout Grid.Column="2"
-                                     HorizontalOptions="Center"
-                                     Spacing="4">
-                    <Frame WidthRequest="72"
-                           HeightRequest="72"
-                           CornerRadius="36"
-                           Padding="0"
-                           BackgroundColor="Transparent"
-                           HasShadow="False"
-                           VerticalOptions="Center"
-                           HorizontalOptions="Center">
-                        <Label Text="📊"
-                               FontSize="36"
-                               VerticalOptions="Center"
-                               HorizontalOptions="Center"
-                               LineBreakMode="NoWrap" />
+                <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center" Spacing="4">
+                    <Frame WidthRequest="72" HeightRequest="72" CornerRadius="36" Padding="0" BackgroundColor="Transparent" HasShadow="False">
+                        <Label Text="📊" FontSize="36" HorizontalOptions="Center" VerticalOptions="Center" />
                         <Frame.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnStatisticsTapped" NumberOfTapsRequired="1" />
+                            <TapGestureRecognizer Tapped="OnStatisticsTapped" />
                         </Frame.GestureRecognizers>
                     </Frame>
-                    <Label Text="Statistiques"
-                           FontSize="12"
-                           TextColor="#7F8C8D"
-                           HorizontalOptions="Center" />
+                    <Label Text="Statistiques" FontSize="12" TextColor="#7F8C8D" HorizontalOptions="Center" />
                 </VerticalStackLayout>
 
-                <!-- Budget (actif) -->
-                <VerticalStackLayout Grid.Column="3"
-                                     HorizontalOptions="Center"
-                                     Spacing="4">
-                    <Frame WidthRequest="72"
-                           HeightRequest="72"
-                           CornerRadius="36"
-                           Padding="0"
-                           BackgroundColor="Transparent"
-                           HasShadow="False"
-                           VerticalOptions="Center"
-                           HorizontalOptions="Center">
-                        <Label Text="💰"
-                               FontSize="36"
-                               VerticalOptions="Center"
-                               HorizontalOptions="Center"
-                               LineBreakMode="NoWrap"
-                               TextColor="#3498DB" />
+                <VerticalStackLayout Grid.Column="3" HorizontalOptions="Center" Spacing="4">
+                    <Frame WidthRequest="72" HeightRequest="72" CornerRadius="36" Padding="0" BackgroundColor="Transparent" HasShadow="False">
+                        <Label Text="💰" FontSize="36" TextColor="#3498DB" HorizontalOptions="Center" VerticalOptions="Center" />
                         <Frame.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnBudgetTapped" NumberOfTapsRequired="1" />
+                            <TapGestureRecognizer Tapped="OnBudgetTapped" />
                         </Frame.GestureRecognizers>
                     </Frame>
-                    <Label Text="Budget"
-                           FontSize="12"
-                           TextColor="#3498DB"
-                           HorizontalOptions="Center" />
+                    <Label Text="Budget" FontSize="12" TextColor="#3498DB" FontAttributes="Bold" HorizontalOptions="Center" />
                 </VerticalStackLayout>
 
             </Grid>

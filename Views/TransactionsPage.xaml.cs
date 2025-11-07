@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using Microsoft.Maui.Storage;
 using Projet_Budget_M1.Models;
 using Projet_Budget_M1.Services;
@@ -9,6 +10,7 @@ namespace Projet_Budget_M1.Views
     public partial class TransactionsPage : ContentPage
     {
         private readonly ObservableCollection<Transaction> _items = new();
+        private readonly ObservableCollection<string> _categories = new();
         private string _currentUserEmail = string.Empty;
         private Transaction? _currentTransaction = null; // Transaction en cours d'édition
 
@@ -16,23 +18,86 @@ namespace Projet_Budget_M1.Views
         {
             InitializeComponent();
             TransactionsList.BindingContext = _items;
+            CategoryPicker.ItemsSource = _categories;
             _currentUserEmail = Preferences.Default.Get("userEmail", "");
             InitializeTransactionForm();
         }
 
-        private void InitializeTransactionForm()
+        private async void InitializeTransactionForm()
         {
             // Initialiser la date à aujourd'hui
             DatePicker.Date = DateTime.Now;
             
+            // Charger les catégories depuis la base de données
+            await LoadCategoriesAsync();
+            
             // Définir la catégorie par défaut
-            CategoryPicker.SelectedIndex = 0; // Alimentation
-            CategoryIcon.Text = GetCategoryIcon("Alimentation");
+            if (_categories.Count > 0)
+            {
+                CategoryPicker.SelectedIndex = 0;
+                CategoryIcon.Text = GetCategoryIcon(_categories[0]);
+            }
+        }
+
+        private async Task LoadCategoriesAsync()
+        {
+            if (string.IsNullOrWhiteSpace(_currentUserEmail)) return;
+            
+            try
+            {
+                _categories.Clear();
+                
+                // Catégories par défaut (toujours affichées)
+                var defaultCategories = new[] { "Logement", "Alimentation", "Transport", "Santé", "Loisirs", "Factures", "Salaire" };
+                foreach (var cat in defaultCategories)
+                {
+                    if (!_categories.Contains(cat))
+                        _categories.Add(cat);
+                }
+                
+                // Charger les catégories de l'utilisateur (celles créées en BD)
+                var categories = await DbService.GetCategoriesAsync(_currentUserEmail);
+                foreach (var cat in categories.OrderBy(c => c.NomCategorie))
+                {
+                    if (!_categories.Contains(cat.NomCategorie))
+                        _categories.Add(cat.NomCategorie);
+                }
+                
+                // Récupérer aussi les catégories des transactions existantes
+                var transactions = await DbService.GetTransactionsAsync(_currentUserEmail);
+                foreach (var tx in transactions)
+                {
+                    if (!string.IsNullOrWhiteSpace(tx.Category) && !_categories.Contains(tx.Category))
+                        _categories.Add(tx.Category);
+                }
+                
+                // Trier la liste
+                var sorted = _categories.OrderBy(c => c).ToList();
+                _categories.Clear();
+                foreach (var cat in sorted)
+                {
+                    _categories.Add(cat);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur lors du chargement des catégories: {ex.Message}");
+                // En cas d'erreur, utiliser les catégories par défaut
+                _categories.Clear();
+                _categories.Add("Alimentation");
+                _categories.Add("Transport");
+                _categories.Add("Logement");
+                _categories.Add("Santé");
+                _categories.Add("Loisirs");
+                _categories.Add("Factures");
+                _categories.Add("Salaire");
+            }
         }
 
         protected override async void OnAppearing()
         {
             base.OnAppearing();
+            await LoadCategoriesAsync();
             await LoadAsync();
         }
 
@@ -86,9 +151,8 @@ namespace Projet_Budget_M1.Views
             AmountEntry.Text = tx.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture);
             DatePicker.Date = tx.Date;
             
-            // Définir la catégorie
-            var categories = new[] { "Alimentation", "Transport", "Logement", "Santé", "Loisirs", "Autres" };
-            var categoryIndex = Array.IndexOf(categories, tx.Category);
+            // Définir la catégorie depuis la liste chargée
+            var categoryIndex = _categories.IndexOf(tx.Category);
             if (categoryIndex >= 0)
             {
                 CategoryPicker.SelectedIndex = categoryIndex;
@@ -96,10 +160,14 @@ namespace Projet_Budget_M1.Views
             }
             else
             {
-                CategoryPicker.SelectedIndex = 0;
-                CategoryIcon.Text = GetCategoryIcon("Alimentation");
+                // Si la catégorie n'existe pas dans la liste, l'ajouter temporairement
+                if (!_categories.Contains(tx.Category))
+                {
+                    _categories.Add(tx.Category);
+                }
+                CategoryPicker.SelectedIndex = _categories.IndexOf(tx.Category);
+                CategoryIcon.Text = GetCategoryIcon(tx.Category);
             }
-
         }
 
         private async void OnDeleteClicked(object sender, EventArgs e)
@@ -153,15 +221,16 @@ namespace Projet_Budget_M1.Views
 
         private string GetCategoryIcon(string category)
         {
-            return category switch
+            return category.ToLower() switch
             {
-                "Alimentation" => "🍽️",
-                "Transport" => "🚗",
-                "Logement" => "🏠",
-                "Santé" => "🏥",
-                "Loisirs" => "🎮",
-                "Autres" => "📦",
-                _ => "📋"
+                var c when c.Contains("logement") || c.Contains("loyer") => "🏠",
+                var c when c.Contains("alimentation") || c.Contains("courses") || c.Contains("nourriture") => "🍽️",
+                var c when c.Contains("transport") || c.Contains("voiture") || c.Contains("essence") => "🚗",
+                var c when c.Contains("loisir") || c.Contains("divertissement") => "🎮",
+                var c when c.Contains("facture") || c.Contains("électricité") || c.Contains("eau") => "💡",
+                var c when c.Contains("santé") || c.Contains("sante") || c.Contains("médecin") => "⚕️",
+                var c when c.Contains("salaire") || c.Contains("revenu") => "💰",
+                _ => "📦"
             };
         }
 
@@ -179,6 +248,41 @@ namespace Projet_Budget_M1.Views
             {
                 await DisplayAlert("Erreur", "Le montant doit être un nombre valide", "OK");
                 return;
+            }
+
+            var categoryName = CategoryPicker.SelectedItem?.ToString() ?? "Autres";
+            var transactionDate = DatePicker.Date;
+            var existingId = _currentTransaction?.Id > 0 ? _currentTransaction.Id : (int?)null;
+
+            // Vérifier si la dépense dépasse le budget (seulement pour les dépenses négatives)
+            if (amount < 0)
+            {
+                var budgetCheck = await DbService.CheckBudgetExceedanceAsync(
+                    _currentUserEmail, categoryName, amount, transactionDate, existingId);
+
+                if (budgetCheck.WillExceed && budgetCheck.BudgetLimit > 0)
+                {
+                    var depassement = budgetCheck.NewTotal - budgetCheck.BudgetLimit;
+                    var message = $"⚠️ Attention : Budget dépassé !\n\n" +
+                                 $"Catégorie : {budgetCheck.CategoryName}\n" +
+                                 $"Budget alloué : {budgetCheck.BudgetLimit:F2} €\n" +
+                                 $"Dépense actuelle : {budgetCheck.CurrentSpent:F2} €\n" +
+                                 $"Nouveau total : {budgetCheck.NewTotal:F2} €\n" +
+                                 $"Dépassement : {depassement:F2} €\n\n" +
+                                 $"Le budget passera en négatif. Voulez-vous continuer ?";
+                    
+                    var continueAnyway = await DisplayAlert(
+                        "Budget dépassé",
+                        message,
+                        "Continuer quand même",
+                        "Annuler"
+                    );
+
+                    if (!continueAnyway)
+                    {
+                        return; // L'utilisateur a annulé
+                    }
+                }
             }
 
             try
@@ -203,8 +307,8 @@ namespace Projet_Budget_M1.Views
 
                 transaction.Title = TitleEntry.Text.Trim();
                 transaction.Amount = amount;
-                transaction.Date = DatePicker.Date;
-                transaction.Category = CategoryPicker.SelectedItem?.ToString() ?? "Autres";
+                transaction.Date = transactionDate;
+                transaction.Category = categoryName;
                 transaction.OwnerEmail = _currentUserEmail;
 
                 // Sauvegarder via DbService
@@ -234,8 +338,11 @@ namespace Projet_Budget_M1.Views
             TitleEntry.Text = string.Empty;
             AmountEntry.Text = "0.00";
             DatePicker.Date = DateTime.Now;
-            CategoryPicker.SelectedIndex = 0;
-            CategoryIcon.Text = GetCategoryIcon("Alimentation");
+            if (_categories.Count > 0)
+            {
+                CategoryPicker.SelectedIndex = 0;
+                CategoryIcon.Text = GetCategoryIcon(_categories[0]);
+            }
         }
 
         // Navigation vers les autres pages

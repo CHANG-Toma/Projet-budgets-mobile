@@ -42,12 +42,13 @@
         </CollectionView>
 
         <!-- Menu Footer -->
-        <Frame Grid.Row="1"
+        <Frame Grid.Row="2"
                BackgroundColor="White"
                CornerRadius="0"
                Padding="0"
                HasShadow="True"
                Margin="0"
+               VerticalOptions="End"
                BorderColor="#E0E0E0">
             <Grid ColumnDefinitions="*,*,*,*"
                   RowDefinitions="Auto"

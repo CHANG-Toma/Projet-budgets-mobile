@@ -2,17 +2,21 @@ using System;
 using Microsoft.Maui.Storage;
 using Projet_Budget_M1.Models;
 using Projet_Budget_M1.Services;
+using Projet_Budget_M1.ViewModels;
 
 namespace Projet_Budget_M1.Views
 {
     public partial class DashboardPage : ContentPage
     {
         private string _currentUserEmail = string.Empty;
+        private DashboardViewModel _viewModel;
 
         public DashboardPage()
         {
             InitializeComponent();
             _currentUserEmail = Preferences.Default.Get("userEmail", "");
+            _viewModel = new DashboardViewModel();
+            BindingContext = _viewModel;
             InitializeTransactionForm();
         }
 
@@ -29,21 +33,7 @@ namespace Projet_Budget_M1.Views
         protected override async void OnAppearing()
         {
             base.OnAppearing();
-            var email = Preferences.Default.Get("userEmail", string.Empty);
-            if (!string.IsNullOrWhiteSpace(email))
-            {
-                var user = await DbService.GetUserByEmailAsync(email);
-                var display = user?.FullName;
-                if (string.IsNullOrWhiteSpace(display))
-                {
-                    display = email.Contains('@') ? email.Split('@')[0] : email;
-                }
-                GreetingLabel.Text = $"Bonjour {display}";
-            }
-            else
-            {
-                GreetingLabel.Text = "Bonjour";
-            }
+            await _viewModel.LoadDataAsync();
         }
 
         private async void OnViewBudgetDetailsTapped(object sender, EventArgs e)
@@ -53,7 +43,7 @@ namespace Projet_Budget_M1.Views
 
         private async void OnViewAllTransactionsTapped(object sender, EventArgs e)
         {
-            await DisplayAlert("Transactions", "Afficher toutes les transactions", "OK");
+            await Shell.Current.GoToAsync("//TransactionsPage");
         }
 
         private void OnAddTransactionClicked(object sender, EventArgs e)
@@ -160,6 +150,9 @@ namespace Projet_Budget_M1.Views
                 
                 // Réinitialiser le formulaire
                 ResetTransactionForm();
+                
+                // Recharger les données du dashboard
+                await _viewModel.LoadDataAsync();
             }
             catch (Exception ex)
             {

@@ -115,7 +115,6 @@ public static class DbService
             return (false, ex.Message);
         }
     }
-<<<<<<< HEAD
 
     public static async Task<bool> UpdateUserFullNameAsync(string email, string newFullName)
     {

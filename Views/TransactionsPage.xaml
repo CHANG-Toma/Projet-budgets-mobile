@@ -15,7 +15,7 @@
             </VerticalStackLayout>
         </ScrollView>
 
-        <!-- Menu Footer avec 4 boutons -->
+        <!-- Menu Footer -->
         <Frame Grid.Row="1"
                BackgroundColor="White"
                CornerRadius="0"
@@ -23,89 +23,119 @@
                HasShadow="True"
                Margin="0"
                BorderColor="#E0E0E0">
-            <Grid ColumnDefinitions="*,*,*,*" 
-                  RowDefinitions="Auto,Auto"
-                  Padding="10,15,10,10">
-                
-                <!-- Bouton Accueil -->
-                <VerticalStackLayout Grid.Column="0" 
-                                    Grid.Row="0" 
-                                    HorizontalOptions="Center" 
-                                    Spacing="5">
-                    <Button Text="🏠"
-                            FontSize="24"
-                            BackgroundColor="Transparent"
-                            TextColor="#7F8C8D"
-                            BorderWidth="0"
-                            WidthRequest="50"
-                            HeightRequest="50"
-                            CornerRadius="25"
-                            Clicked="OnHomeClicked" />
+            <Grid ColumnDefinitions="*,*,*,*"
+                  RowDefinitions="Auto"
+                  Padding="8,10,8,10">
+
+                <!-- Accueil -->
+                <VerticalStackLayout Grid.Column="0"
+                                     HorizontalOptions="Center"
+                                     Spacing="4">
+                    <Frame WidthRequest="72"
+                           HeightRequest="72"
+                           CornerRadius="36"
+                           Padding="0"
+                           BackgroundColor="Transparent"
+                           HasShadow="False"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center">
+                        <Label Text="🏠"
+                               FontSize="36"
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center"
+                               LineBreakMode="NoWrap" />
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnHomeTapped" NumberOfTapsRequired="1" />
+                        </Frame.GestureRecognizers>
+                    </Frame>
                     <Label Text="Accueil"
                            FontSize="12"
                            TextColor="#7F8C8D"
                            HorizontalOptions="Center" />
                 </VerticalStackLayout>
 
-                <!-- Bouton Transactions -->
-                <VerticalStackLayout Grid.Column="1" 
-                                    Grid.Row="0" 
-                                    HorizontalOptions="Center" 
-                                    Spacing="5">
-                    <Button Text="💳"
-                            FontSize="24"
-                            BackgroundColor="Transparent"
-                            TextColor="#3498DB"
-                            BorderWidth="0"
-                            WidthRequest="50"
-                            HeightRequest="50"
-                            CornerRadius="25"
-                            Clicked="OnTransactionsClicked" />
+                <!-- Transactions -->
+                <VerticalStackLayout Grid.Column="1"
+                                     HorizontalOptions="Center"
+                                     Spacing="4">
+                    <Frame WidthRequest="72"
+                           HeightRequest="72"
+                           CornerRadius="36"
+                           Padding="0"
+                           BackgroundColor="Transparent"
+                           HasShadow="False"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center">
+                        <Label Text="💳"
+                               FontSize="36"
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center"
+                               LineBreakMode="NoWrap" />
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnTransactionsTapped" NumberOfTapsRequired="1" />
+                        </Frame.GestureRecognizers>
+                    </Frame>
                     <Label Text="Transactions"
                            FontSize="12"
-                           TextColor="#3498DB"
+                           TextColor="#7F8C8D"
                            HorizontalOptions="Center" />
                 </VerticalStackLayout>
 
-                <!-- Bouton Statistiques -->
-                <VerticalStackLayout Grid.Column="2" 
-                                    Grid.Row="0" 
-                                    HorizontalOptions="Center" 
-                                    Spacing="5">
-                    <Button Text="📊"
-                            FontSize="24"
-                            BackgroundColor="Transparent"
-                            TextColor="#7F8C8D"
-                            BorderWidth="0"
-                            WidthRequest="50"
-                            HeightRequest="50"
-                            CornerRadius="25"
-                            Clicked="OnStatisticsClicked" />
+                <!-- Statistiques -->
+                <VerticalStackLayout Grid.Column="2"
+                                     HorizontalOptions="Center"
+                                     Spacing="4">
+                    <Frame WidthRequest="72"
+                           HeightRequest="72"
+                           CornerRadius="36"
+                           Padding="0"
+                           BackgroundColor="Transparent"
+                           HasShadow="False"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center">
+                        <Label Text="📊"
+                               FontSize="36"
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center"
+                               LineBreakMode="NoWrap" />
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnStatisticsTapped" NumberOfTapsRequired="1" />
+                        </Frame.GestureRecognizers>
+                    </Frame>
                     <Label Text="Statistiques"
                            FontSize="12"
                            TextColor="#7F8C8D"
                            HorizontalOptions="Center" />
                 </VerticalStackLayout>
 
-                <!-- Bouton Budget -->
-                <VerticalStackLayout Grid.Column="3" 
-                                    Grid.Row="0" 
-                                    HorizontalOptions="Center" 
-                                    Spacing="5">
-                    <Button Text="💰"
-                            FontSize="24"
-                            BackgroundColor="Transparent"
-                            TextColor="#7F8C8D"
-                            BorderWidth="0"
-                            WidthRequest="50"
-                            HeightRequest="50"
-                            CornerRadius="25"
-                            Clicked="OnBudgetClicked" />
+                <!-- Budget (actif) -->
+                <VerticalStackLayout Grid.Column="3"
+                                     HorizontalOptions="Center"
+                                     Spacing="4">
+                    <Frame WidthRequest="72"
+                           HeightRequest="72"
+                           CornerRadius="36"
+                           Padding="0"
+                           BackgroundColor="Transparent"
+                           HasShadow="False"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center">
+                        <Label Text="💰"
+                               FontSize="36"
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center"
+                               LineBreakMode="NoWrap"
+                               TextColor="#3498DB" />
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnBudgetTapped" NumberOfTapsRequired="1" />
+                        </Frame.GestureRecognizers>
+                    </Frame>
                     <Label Text="Budget"
                            FontSize="12"
-                           TextColor="#7F8C8D"
+                           TextColor="#3498DB"
                            HorizontalOptions="Center" />
                 </VerticalStackLayout>
+
             </Grid>
         </Frame>
     </Grid>

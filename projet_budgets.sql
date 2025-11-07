@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : ven. 07 nov. 2025 à 12:27
+-- Généré le : ven. 07 nov. 2025 à 14:05
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -29,7 +29,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `attribuer` (
   `id_categorie` int(11) NOT NULL,
-  `id_budget` varchar(50) NOT NULL
+  `id_budget` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -39,11 +39,18 @@ CREATE TABLE `attribuer` (
 --
 
 CREATE TABLE `budgetmensuel` (
-  `id_budget` varchar(50) NOT NULL,
+  `id_budget` int(11) NOT NULL,
   `mois` date NOT NULL,
   `limite` int(11) DEFAULT NULL,
   `id_utilisateur` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `budgetmensuel`
+--
+
+INSERT INTO `budgetmensuel` (`id_budget`, `mois`, `limite`, `id_utilisateur`) VALUES
+(0, '2025-11-01', NULL, 2);
 
 -- --------------------------------------------------------
 
@@ -66,12 +73,19 @@ CREATE TABLE `catégorie` (
 CREATE TABLE `depense` (
   `id_depense` int(11) NOT NULL,
   `date_depense` datetime NOT NULL,
-  `montant` int(11) NOT NULL,
+  `montant` double NOT NULL,
   `description` varchar(50) DEFAULT NULL,
   `id_moyen` int(11) NOT NULL,
-  `id_budget` varchar(50) NOT NULL,
+  `id_budget` int(11) NOT NULL,
   `id_utilisateur` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `depense`
+--
+
+INSERT INTO `depense` (`id_depense`, `date_depense`, `montant`, `description`, `id_moyen`, `id_budget`, `id_utilisateur`) VALUES
+(2, '2025-11-07 00:00:00', -50, 'test - Alimentation', 1, 0, 2);
 
 -- --------------------------------------------------------
 
@@ -85,6 +99,13 @@ CREATE TABLE `moyenpaiement` (
   `id_utilisateur` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Déchargement des données de la table `moyenpaiement`
+--
+
+INSERT INTO `moyenpaiement` (`id_moyen`, `libelle`, `id_utilisateur`) VALUES
+(1, 'Espèces', 2);
+
 -- --------------------------------------------------------
 
 --
@@ -96,7 +117,7 @@ CREATE TABLE `utilisateur` (
   `nom` varchar(50) NOT NULL,
   `prénom` varchar(50) NOT NULL,
   `email` varchar(50) NOT NULL,
-  `mot_de_passe` varchar(50) NOT NULL,
+  `mot_de_passe` varchar(255) NOT NULL,
   `date_inscription` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -105,7 +126,7 @@ CREATE TABLE `utilisateur` (
 --
 
 INSERT INTO `utilisateur` (`id_utilisateur`, `nom`, `prénom`, `email`, `mot_de_passe`, `date_inscription`) VALUES
-(0, '', 'toma', 'toma@test.com', '$2a$11$0ggByZjwmBsnoZED2O2WzORFKUaqw253BwN9oD/wb/P', '2025-11-07 12:21:12');
+(2, '', 'toma', 'toma@gmail.com', '$2a$11$bt6.RHAcqkgbwTk4dtMeIO.WK9b3db3sYa5sHyxSqdNCeNeINGCc6', '2025-11-07 14:02:52');
 
 --
 -- Index pour les tables déchargées
@@ -155,6 +176,22 @@ ALTER TABLE `moyenpaiement`
 ALTER TABLE `utilisateur`
   ADD PRIMARY KEY (`id_utilisateur`),
   ADD UNIQUE KEY `email` (`email`);
+
+--
+-- AUTO_INCREMENT pour les tables déchargées
+--
+
+--
+-- AUTO_INCREMENT pour la table `depense`
+--
+ALTER TABLE `depense`
+  MODIFY `id_depense` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT pour la table `utilisateur`
+--
+ALTER TABLE `utilisateur`
+  MODIFY `id_utilisateur` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Contraintes pour les tables déchargées

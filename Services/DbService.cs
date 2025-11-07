@@ -182,6 +182,7 @@ public static class DbService
         await using var cmd = connection.CreateCommand();
         if (tx.Id == 0)
         {
+            // Pour une nouvelle transaction, ne pas spécifier id_depense pour laisser MySQL l'auto-incrémenter
             cmd.CommandText = @"INSERT INTO depense (date_depense, montant, description, id_moyen, id_budget, id_utilisateur) 
                                 VALUES (@date_depense, @montant, @description, @id_moyen, @id_budget, @id_utilisateur); 
                                 SELECT LAST_INSERT_ID();";
@@ -202,8 +203,23 @@ public static class DbService
         cmd.Parameters.AddWithValue("@id_budget", idBudget);
         cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
 
-        var result = await cmd.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
+        try
+        {
+            var result = await cmd.ExecuteScalarAsync();
+            var id = Convert.ToInt32(result);
+            
+            // Si LAST_INSERT_ID() retourne 0 et qu'on fait un INSERT, cela signifie que AUTO_INCREMENT n'est pas activé
+            if (id == 0 && tx.Id == 0)
+            {
+                throw new Exception("La table 'depense' doit avoir AUTO_INCREMENT activé sur 'id_depense'. Exécutez: ALTER TABLE depense MODIFY id_depense int(11) NOT NULL AUTO_INCREMENT;");
+            }
+            
+            return id;
+        }
+        catch (MySqlException ex) when (ex.Number == 1062)
+        {
+            throw new Exception("Erreur: Une transaction avec cet ID existe déjà. La table 'depense' doit avoir AUTO_INCREMENT activé. Exécutez: ALTER TABLE depense MODIFY id_depense int(11) NOT NULL AUTO_INCREMENT;");
+        }
     }
 
     public static async Task<bool> DeleteTransactionAsync(int id, string ownerEmail)

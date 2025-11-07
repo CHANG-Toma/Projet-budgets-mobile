@@ -11,22 +11,22 @@
             <Label Text="Transactions" FontSize="24" FontAttributes="Bold" TextColor="#2C3E50" />
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                 <Frame Grid.Column="0" Padding="0" BackgroundColor="White" CornerRadius="12" HasShadow="False">
-                    <Entry x:Name="SearchEntry" Placeholder="Rechercher une transaction..." BackgroundColor="Transparent" TextColor="#2C3E50" HeightRequest="45" TextChanged="OnSearchChanged" />
+                    <Entry Placeholder="Rechercher une transaction..." BackgroundColor="Transparent" TextColor="#2C3E50" HeightRequest="45" Text="{Binding SearchText, Mode=TwoWay}" />
                 </Frame>
-                <Button Grid.Column="1" Text="＋" FontSize="20" WidthRequest="45" HeightRequest="45" CornerRadius="12" BackgroundColor="#2C3E50" TextColor="White" Clicked="OnAddClicked" />
+                <Button Grid.Column="1" Text="＋" FontSize="20" WidthRequest="45" HeightRequest="45" CornerRadius="12" BackgroundColor="#2C3E50" TextColor="White" Command="{Binding AddTransactionCommand}" />
             </Grid>
         </VerticalStackLayout>
 
         <!-- List -->
-        <CollectionView Grid.Row="1" x:Name="TransactionsList" ItemsSource="{Binding}" SelectionMode="None">
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Transactions}" SelectionMode="None">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Frame Margin="16,8" Padding="16" CornerRadius="16" HasShadow="True" BackgroundColor="White">
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
                             <Label Grid.Row="0" Grid.Column="0" Text="{Binding Title}" FontSize="18" TextColor="#2C3E50" />
                             <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="8">
-                                <Button Text="✏️" Padding="6" BackgroundColor="Transparent" Clicked="OnEditClicked" CommandParameter="{Binding .}" />
-                                <Button Text="🗑️" Padding="6" BackgroundColor="Transparent" TextColor="#E74C3C" Clicked="OnDeleteClicked" CommandParameter="{Binding .}" />
+                                <Button Text="✏️" Padding="6" BackgroundColor="Transparent" Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.EditTransactionCommand}" CommandParameter="{Binding .}" />
+                                <Button Text="🗑️" Padding="6" BackgroundColor="Transparent" TextColor="#E74C3C" Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteTransactionCommand}" CommandParameter="{Binding .}" />
                             </HorizontalStackLayout>
                             <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Spacing="12" VerticalOptions="Center">
                                 <Frame Padding="8,4" CornerRadius="10" BackgroundColor="#ECF0F1" HasShadow="False">
@@ -72,7 +72,7 @@
                                HorizontalOptions="Center"
                                LineBreakMode="NoWrap" />
                         <Frame.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnHomeTapped" NumberOfTapsRequired="1" />
+                            <TapGestureRecognizer Command="{Binding NavigateHomeCommand}" NumberOfTapsRequired="1" />
                         </Frame.GestureRecognizers>
                     </Frame>
                     <Label Text="Accueil"
@@ -99,7 +99,7 @@
                                HorizontalOptions="Center"
                                LineBreakMode="NoWrap" />
                         <Frame.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnTransactionsTapped" NumberOfTapsRequired="1" />
+                            <TapGestureRecognizer Command="{Binding LoadDataCommand}" NumberOfTapsRequired="1" />
                         </Frame.GestureRecognizers>
                     </Frame>
                     <Label Text="Transactions"
@@ -126,7 +126,7 @@
                                HorizontalOptions="Center"
                                LineBreakMode="NoWrap" />
                         <Frame.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnStatisticsTapped" NumberOfTapsRequired="1" />
+                            <TapGestureRecognizer Command="{Binding NavigateStatisticsCommand}" NumberOfTapsRequired="1" />
                         </Frame.GestureRecognizers>
                     </Frame>
                     <Label Text="Statistiques"
@@ -154,7 +154,7 @@
                                LineBreakMode="NoWrap"
                                TextColor="#3498DB" />
                         <Frame.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnBudgetTapped" NumberOfTapsRequired="1" />
+                            <TapGestureRecognizer Command="{Binding NavigateBudgetCommand}" NumberOfTapsRequired="1" />
                         </Frame.GestureRecognizers>
                     </Frame>
                     <Label Text="Budget"
@@ -167,11 +167,11 @@
         </Frame>
 
         <!-- Overlay pour le formulaire de transaction -->
-        <Grid x:Name="TransactionOverlay"
+        <Grid x:Name="OverlayGrid"
               Grid.Row="0"
               Grid.RowSpan="3"
               BackgroundColor="#80000000"
-              IsVisible="False">
+              IsVisible="{Binding IsOverlayVisible}">
             <Grid.GestureRecognizers>
                 <TapGestureRecognizer Tapped="OnOverlayTapped"/>
             </Grid.GestureRecognizers>
@@ -192,7 +192,10 @@
                     <TapGestureRecognizer Tapped="OnFormFrameTapped"/>
                 </Frame.GestureRecognizers>
                 
-                <Grid RowDefinitions="Auto,*" RowSpacing="0">
+                <Grid RowDefinitions="Auto,*" RowSpacing="0" InputTransparent="False">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnFormFrameTapped"/>
+                        </Grid.GestureRecognizers>
                         
                         <!-- Header bleu foncé -->
                         <Frame Grid.Row="0"
@@ -212,10 +215,9 @@
                                         WidthRequest="35"
                                         HeightRequest="35"
                                         CornerRadius="17"
-                                        Clicked="OnCloseTransactionFormClicked" />
-                                <Label x:Name="FormTitleLabel"
-                                       Grid.Column="1"
-                                       Text="Nouvelle transaction"
+                                        Command="{Binding CloseOverlayCommand}" />
+                                <Label Grid.Column="1"
+                                       Text="{Binding FormTitle}"
                                        FontSize="18"
                                        FontAttributes="Bold"
                                        TextColor="White"
@@ -259,13 +261,13 @@
                                                    FontSize="16"
                                                    VerticalOptions="Center"
                                                    Margin="0,0,10,0" />
-                                            <Entry x:Name="TitleEntry"
-                                                   Grid.Column="1"
+                                            <Entry Grid.Column="1"
                                                    Placeholder="Ex: Courses, Salaire..."
                                                    BackgroundColor="Transparent"
                                                    TextColor="#2C3E50"
                                                    PlaceholderColor="#95A5A6"
-                                                   FontSize="16" />
+                                                   FontSize="16"
+                                                   Text="{Binding Title, Mode=TwoWay}" />
                                         </Grid>
                                     </Frame>
                                 </VerticalStackLayout>
@@ -294,9 +296,8 @@
                                                    FontSize="16"
                                                    VerticalOptions="Center"
                                                    Margin="0,0,10,0" />
-                                            <Entry x:Name="AmountEntry"
-                                                   Grid.Column="1"
-                                                   Text="0.00"
+                                            <Entry Grid.Column="1"
+                                                   Text="{Binding Amount, Mode=TwoWay}"
                                                    Keyboard="Numeric"
                                                    BackgroundColor="Transparent"
                                                    TextColor="#2C3E50"
@@ -318,29 +319,18 @@
                                            HasShadow="False"
                                            BorderColor="Transparent">
                                         <Grid ColumnDefinitions="Auto,*,Auto">
-                                            <Label x:Name="CategoryIcon"
-                                                   Grid.Column="0"
-                                                   Text="🍽️"
+                                            <Label Grid.Column="0"
+                                                   Text="{Binding CategoryIcon}"
                                                    FontSize="18"
                                                    VerticalOptions="Center"
                                                    Margin="0,0,10,0" />
-                                            <Picker x:Name="CategoryPicker"
-                                                    Grid.Column="1"
+                                            <Picker Grid.Column="1"
                                                     BackgroundColor="Transparent"
                                                     TextColor="#2C3E50"
                                                     Title=""
                                                     FontSize="16"
-                                                    SelectedIndexChanged="OnCategorySelected">
-                                                <Picker.ItemsSource>
-                                                    <x:Array Type="{x:Type x:String}">
-                                                        <x:String>Alimentation</x:String>
-                                                        <x:String>Transport</x:String>
-                                                        <x:String>Logement</x:String>
-                                                        <x:String>Santé</x:String>
-                                                        <x:String>Loisirs</x:String>
-                                                        <x:String>Autres</x:String>
-                                                    </x:Array>
-                                                </Picker.ItemsSource>
+                                                    ItemsSource="{Binding Categories}"
+                                                    SelectedItem="{Binding SelectedCategory, Mode=TwoWay}">
                                             </Picker>
                                             <Label Text="▼"
                                                    Grid.Column="2"
@@ -366,12 +356,11 @@
                                            HasShadow="False"
                                            BorderColor="Transparent">
                                         <Grid ColumnDefinitions="*,Auto">
-                                            <DatePicker x:Name="DatePicker"
-                                                        Grid.Column="0"
+                                            <DatePicker Grid.Column="0"
                                                         BackgroundColor="Transparent"
                                                         TextColor="#2C3E50"
                                                         FontSize="16"
-                                                        DateSelected="OnDateSelected" />
+                                                        Date="{Binding Date, Mode=TwoWay}" />
                                             <Label Text="📅"
                                                    Grid.Column="1"
                                                    FontSize="18"
@@ -393,7 +382,7 @@
                                             BackgroundColor="#ECF0F1"
                                             CornerRadius="10"
                                             Padding="0,12"
-                                            Clicked="OnCloseTransactionFormClicked" />
+                                            Command="{Binding CloseOverlayCommand}" />
                                     <Button Grid.Column="1"
                                             Text="Enregistrer"
                                             FontSize="16"
@@ -402,7 +391,7 @@
                                             BackgroundColor="#2C3E50"
                                             CornerRadius="10"
                                             Padding="0,12"
-                                            Clicked="OnSaveTransactionClicked" />
+                                            Command="{Binding SaveTransactionCommand}" />
                                 </Grid>
 
                             </VerticalStackLayout>

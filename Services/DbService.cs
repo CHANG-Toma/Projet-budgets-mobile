@@ -137,10 +137,17 @@ public static class DbService
     public static async Task<bool> UpdateUserFullNameAsync(string email, string newFullName)
     {
         if (string.IsNullOrWhiteSpace(email)) return false;
+        
+        // Séparer le nom complet en prénom et nom
+        var parts = newFullName.Trim().Split(' ', 2);
+        var prenom = parts[0];
+        var nom = parts.Length > 1 ? parts[1] : string.Empty;
+        
         await using var connection = await OpenConnectionAsync();
         await using var cmd = connection.CreateCommand();
-        cmd.CommandText = "UPDATE users SET fullname=@fullname WHERE email=@email";
-        cmd.Parameters.AddWithValue("@fullname", newFullName);
+        cmd.CommandText = "UPDATE utilisateur SET prénom=@prenom, nom=@nom WHERE email=@email";
+        cmd.Parameters.AddWithValue("@prenom", prenom);
+        cmd.Parameters.AddWithValue("@nom", nom);
         cmd.Parameters.AddWithValue("@email", email);
         var rows = await cmd.ExecuteNonQueryAsync();
         return rows > 0;
@@ -149,21 +156,51 @@ public static class DbService
     public static async Task<int> AddOrUpdateTransactionAsync(Transaction tx)
     {
         await using var connection = await OpenConnectionAsync();
+        
+        // Récupérer l'ID utilisateur à partir de l'email
+        var user = await GetUserByEmailAsync(tx.OwnerEmail);
+        if (user == null) throw new Exception("Utilisateur introuvable");
+        
+        // Valeurs par défaut pour id_moyen (1 = Espèces par défaut) et id_budget (générique)
+        int idMoyen = 1;
+        string idBudget = $"BUDGET_{DateTime.Now:yyyyMM}"; // Budget mensuel auto
+        
+        // Créer ou récupérer le moyen de paiement par défaut
+        await using var cmdMoyen = connection.CreateCommand();
+        cmdMoyen.CommandText = "INSERT IGNORE INTO moyenpaiement (id_moyen, libelle, id_utilisateur) VALUES (1, 'Espèces', @id_utilisateur)";
+        cmdMoyen.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        await cmdMoyen.ExecuteNonQueryAsync();
+        
+        // Créer ou récupérer le budget mensuel
+        await using var cmdBudget = connection.CreateCommand();
+        cmdBudget.CommandText = "INSERT IGNORE INTO budgetmensuel (id_budget, mois, limite, id_utilisateur) VALUES (@id_budget, @mois, NULL, @id_utilisateur)";
+        cmdBudget.Parameters.AddWithValue("@id_budget", idBudget);
+        cmdBudget.Parameters.AddWithValue("@mois", new DateTime(tx.Date.Year, tx.Date.Month, 1));
+        cmdBudget.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        await cmdBudget.ExecuteNonQueryAsync();
+        
         await using var cmd = connection.CreateCommand();
         if (tx.Id == 0)
         {
-            cmd.CommandText = "INSERT INTO transactions (title, amount, date, category, owner_email) VALUES (@title, @amount, @date, @category, @owner_email); SELECT LAST_INSERT_ID();";
+            cmd.CommandText = @"INSERT INTO depense (date_depense, montant, description, id_moyen, id_budget, id_utilisateur) 
+                                VALUES (@date_depense, @montant, @description, @id_moyen, @id_budget, @id_utilisateur); 
+                                SELECT LAST_INSERT_ID();";
         }
         else
         {
-            cmd.CommandText = "UPDATE transactions SET title=@title, amount=@amount, date=@date, category=@category WHERE id=@id AND owner_email=@owner_email; SELECT @id;";
+            cmd.CommandText = @"UPDATE depense 
+                                SET date_depense=@date_depense, montant=@montant, description=@description 
+                                WHERE id_depense=@id AND id_utilisateur=@id_utilisateur; 
+                                SELECT @id;";
             cmd.Parameters.AddWithValue("@id", tx.Id);
         }
-        cmd.Parameters.AddWithValue("@title", tx.Title);
-        cmd.Parameters.AddWithValue("@amount", tx.Amount);
-        cmd.Parameters.AddWithValue("@date", tx.Date);
-        cmd.Parameters.AddWithValue("@category", tx.Category);
-        cmd.Parameters.AddWithValue("@owner_email", tx.OwnerEmail);
+        
+        cmd.Parameters.AddWithValue("@date_depense", tx.Date);
+        cmd.Parameters.AddWithValue("@montant", tx.Amount);
+        cmd.Parameters.AddWithValue("@description", $"{tx.Title} - {tx.Category}");
+        cmd.Parameters.AddWithValue("@id_moyen", idMoyen);
+        cmd.Parameters.AddWithValue("@id_budget", idBudget);
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
 
         var result = await cmd.ExecuteScalarAsync();
         return Convert.ToInt32(result);
@@ -172,10 +209,15 @@ public static class DbService
     public static async Task<bool> DeleteTransactionAsync(int id, string ownerEmail)
     {
         await using var connection = await OpenConnectionAsync();
+        
+        // Récupérer l'ID utilisateur à partir de l'email
+        var user = await GetUserByEmailAsync(ownerEmail);
+        if (user == null) return false;
+        
         await using var cmd = connection.CreateCommand();
-        cmd.CommandText = "DELETE FROM transactions WHERE id=@id AND owner_email=@owner_email";
+        cmd.CommandText = "DELETE FROM depense WHERE id_depense=@id AND id_utilisateur=@id_utilisateur";
         cmd.Parameters.AddWithValue("@id", id);
-        cmd.Parameters.AddWithValue("@owner_email", ownerEmail);
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
         var rows = await cmd.ExecuteNonQueryAsync();
         return rows > 0;
     }
@@ -184,29 +226,47 @@ public static class DbService
     {
         var list = new List<Transaction>();
         await using var connection = await OpenConnectionAsync();
+        
+        // Récupérer l'ID utilisateur à partir de l'email
+        var user = await GetUserByEmailAsync(ownerEmail);
+        if (user == null) return list;
+        
         await using var cmd = connection.CreateCommand();
         if (string.IsNullOrWhiteSpace(search))
         {
-            cmd.CommandText = "SELECT id, title, amount, date, category, owner_email FROM transactions WHERE owner_email=@owner_email ORDER BY date DESC, id DESC";
+            cmd.CommandText = @"SELECT d.id_depense, d.description, d.montant, d.date_depense, d.id_utilisateur
+                                FROM depense d
+                                WHERE d.id_utilisateur=@id_utilisateur 
+                                ORDER BY d.date_depense DESC, d.id_depense DESC";
         }
         else
         {
-            cmd.CommandText = "SELECT id, title, amount, date, category, owner_email FROM transactions WHERE owner_email=@owner_email AND (title LIKE @q OR category LIKE @q) ORDER BY date DESC, id DESC";
+            cmd.CommandText = @"SELECT d.id_depense, d.description, d.montant, d.date_depense, d.id_utilisateur
+                                FROM depense d
+                                WHERE d.id_utilisateur=@id_utilisateur 
+                                AND d.description LIKE @q 
+                                ORDER BY d.date_depense DESC, d.id_depense DESC";
             cmd.Parameters.AddWithValue("@q", $"%{search}%");
         }
-        cmd.Parameters.AddWithValue("@owner_email", ownerEmail);
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
 
         await using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
+            var description = reader.IsDBNull(1) ? "" : reader.GetString(1);
+            var parts = description.Split(" - ", 2);
+            var title = parts.Length > 0 ? parts[0] : description;
+            var category = parts.Length > 1 ? parts[1] : "Général";
+            
             list.Add(new Transaction
             {
                 Id = reader.GetInt32(0),
-                Title = reader.GetString(1),
+                Title = title,
                 Amount = reader.GetDouble(2),
                 Date = reader.GetDateTime(3),
-                Category = reader.GetString(4),
-                OwnerEmail = reader.GetString(5)
+                Category = category,
+                OwnerEmail = ownerEmail,
+                IdUtilisateur = reader.GetInt32(4)
             });
         }
         return list;

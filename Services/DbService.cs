@@ -1,9 +1,6 @@
 using System;
 using System.Threading.Tasks;
-<<<<<<< HEAD
 using System.Collections.Generic;
-=======
->>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
 using MySqlConnector;
 using Projet_Budget_M1.Models;
 
@@ -197,8 +194,6 @@ public static class DbService
         }
         return list;
     }
-=======
->>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
 }
 
 public readonly record struct RegistrationResult(bool IsSuccess, string? ErrorMessage, bool EmailExists)

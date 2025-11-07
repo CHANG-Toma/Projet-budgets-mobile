@@ -1,5 +1,15 @@
 ## .NET MAUI / Projet Budget M1 - GitIgnore
 
+# Generated source files
+**/obj/**/*.cs
+**/intermediatexaml/**
+*.Generated.cs
+*.g.cs
+*.g.i.cs
+*.sg.cs
+**/XamlTypeInfo.g.cs
+**/Microsoft.Maui.Controls.SourceGen/**
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

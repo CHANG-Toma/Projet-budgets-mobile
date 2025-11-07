@@ -514,6 +514,7 @@ C:\Users\hauat\Desktop\Master 1\Tranformation digitale\Projet Budget\Projet Budg
 C:\Users\hauat\Desktop\Master 1\Tranformation digitale\Projet Budget\Projet Budget M1\Projet Budget M1\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\qualifiers.txt
 C:\Users\hauat\Desktop\Master 1\Tranformation digitale\Projet Budget\Projet Budget M1\Projet Budget M1\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\qualifiers.txt.intermediate
 C:\Users\hauat\Desktop\Master 1\Tranformation digitale\Projet Budget\Projet Budget M1\Projet Budget M1\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\MultipleQualifiersPerDimensionFound.txt
+<<<<<<< HEAD
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.csproj.AssemblyReference.cache
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\mauiimage.inputs
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\mauifont.inputs
@@ -597,6 +598,10 @@ C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.sourcelink.json
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Platforms\Windows\App.xbf
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\AboutAssets.txt
+=======
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\AboutAssets.txt
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Platforms\Windows\App.xbf
+>>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\splashSplashScreen.scale-100.png
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\splashSplashScreen.scale-125.png
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\splashSplashScreen.scale-150.png
@@ -604,6 +609,60 @@ C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\splashSplashScreen.scale-400.png
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\OpenSans-Regular.ttf
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\OpenSans-Semibold.ttf
+<<<<<<< HEAD
+=======
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLargeTile.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLargeTile.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLargeTile.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLargeTile.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLargeTile.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconWideTile.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconWideTile.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconWideTile.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconWideTile.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconWideTile.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconMediumTile.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconMediumTile.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconMediumTile.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconMediumTile.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconMediumTile.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconSmallTile.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconSmallTile.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconSmallTile.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconSmallTile.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconSmallTile.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconStoreLogo.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconStoreLogo.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconStoreLogo.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconStoreLogo.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconStoreLogo.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.altform-lightunplated_targetsize-256.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.altform-lightunplated_targetsize-48.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.altform-lightunplated_targetsize-32.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.altform-lightunplated_targetsize-24.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.altform-lightunplated_targetsize-16.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.altform-unplated_targetsize-256.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.altform-unplated_targetsize-48.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.altform-unplated_targetsize-32.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.altform-unplated_targetsize-24.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.altform-unplated_targetsize-16.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.targetsize-256.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.targetsize-48.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.targetsize-32.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.targetsize-24.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.targetsize-16.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLogo.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appicon.ico
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\dotnet_bot.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\dotnet_bot.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\dotnet_bot.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\dotnet_bot.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\dotnet_bot.scale-100.png
+>>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\CoreMessagingXP.dll
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\dcompi.dll
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\dwmcorei.dll
@@ -868,6 +927,7 @@ C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.Windows.VisionInternal.winmd
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.Windows.Widgets.winmd
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.Windows.Workloads.winmd
+<<<<<<< HEAD
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appicon.ico
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLargeTile.scale-100.png
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\appiconLargeTile.scale-125.png
@@ -919,6 +979,8 @@ C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\dotnet_bot.scale-150.png
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\dotnet_bot.scale-200.png
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\dotnet_bot.scale-400.png
+=======
+>>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.exe
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.deps.json
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.runtimeconfig.json
@@ -926,7 +988,10 @@ C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.pdb
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\resources.pri
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.Web.WebView2.Core.dll
+<<<<<<< HEAD
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\BCrypt.Net-Next.dll
+=======
+>>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.Extensions.Configuration.dll
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.Extensions.Configuration.Abstractions.dll
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.Extensions.DependencyInjection.dll
@@ -969,7 +1034,10 @@ C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.Windows.System.Projection.dll
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.Windows.Widgets.Projection.dll
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.WindowsAppRuntime.Bootstrap.Net.dll
+<<<<<<< HEAD
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\MySqlConnector.dll
+=======
+>>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\ar\Microsoft.Maui.Controls.resources.dll
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\ca\Microsoft.Maui.Controls.resources.dll
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\cs\Microsoft.Maui.Controls.resources.dll
@@ -1013,8 +1081,94 @@ C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.Web.WebView2.Core.Projection.dll
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.UI.pri
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Microsoft.UI.Xaml.Controls.pri
+<<<<<<< HEAD
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\XamlC.stamp
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet B.39B58B99.Up2Date
+=======
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.csproj.AssemblyReference.cache
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\mauiimage.inputs
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\mauifont.inputs
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\mauisplash.inputs
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\mauimanifest.stamp
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Platforms\Windows\App.g.i.cs
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Platforms\Windows\App.g.cs
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\XamlTypeInfo.g.cs
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Platforms\Windows\App.xaml
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Platforms\Windows\App.xbf
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\XamlSaveStateFile.xml
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.GeneratedMSBuildEditorConfig.editorconfig
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\sp\splashSplashScreen.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\sp\splashSplashScreen.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\sp\splashSplashScreen.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\sp\splashSplashScreen.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\sp\splashSplashScreen.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\mauisplash.stamp
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\mauifont.stamp
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\f\OpenSans-Regular.ttf
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\f\OpenSans-Semibold.ttf
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLargeTile.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLargeTile.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLargeTile.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLargeTile.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLargeTile.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconWideTile.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconWideTile.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconWideTile.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconWideTile.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconWideTile.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconMediumTile.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconMediumTile.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconMediumTile.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconMediumTile.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconMediumTile.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconSmallTile.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconSmallTile.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconSmallTile.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconSmallTile.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconSmallTile.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconStoreLogo.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconStoreLogo.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconStoreLogo.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconStoreLogo.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconStoreLogo.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.altform-lightunplated_targetsize-256.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.altform-lightunplated_targetsize-48.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.altform-lightunplated_targetsize-32.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.altform-lightunplated_targetsize-24.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.altform-lightunplated_targetsize-16.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.altform-unplated_targetsize-256.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.altform-unplated_targetsize-48.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.altform-unplated_targetsize-32.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.altform-unplated_targetsize-24.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.altform-unplated_targetsize-16.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.targetsize-256.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.targetsize-48.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.targetsize-32.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.targetsize-24.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.targetsize-16.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appiconLogo.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\appicon.ico
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\dotnet_bot.scale-400.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\dotnet_bot.scale-200.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\dotnet_bot.scale-150.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\dotnet_bot.scale-125.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\resizetizer\r\dotnet_bot.scale-100.png
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\mauiimage.stamp
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\mauiimage.outputs
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.AssemblyInfoInputs.cache
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.AssemblyInfo.cs
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.csproj.CoreCompileInputs.cache
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.sourcelink.json
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\XamlC.stamp
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet B.39B58B99.Up2Date
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.dll
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\refint\Projet Budget M1.dll
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.pdb
+>>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Projet Budget M1.genruntimeconfig.cache
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\ref\Projet Budget M1.dll
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\priconfig.xml
@@ -1032,3 +1186,8 @@ C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\qualifiers.txt
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\qualifiers.txt.intermediate
 C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\MultipleQualifiersPerDimensionFound.txt
+<<<<<<< HEAD
+=======
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\BCrypt.Net-Next.dll
+C:\xampp\htdocs\Projet-budgets-mobile-dev\Projet-budgets-mobile\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\MySqlConnector.dll
+>>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168

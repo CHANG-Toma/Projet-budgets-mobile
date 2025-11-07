@@ -1,6 +1,9 @@
 using System;
 using System.Threading.Tasks;
+<<<<<<< HEAD
 using Microsoft.Maui.Storage;
+=======
+>>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
 using Projet_Budget_M1.Services;
 
 namespace Projet_Budget_M1.Views
@@ -32,13 +35,21 @@ namespace Projet_Budget_M1.Views
             try
             {
                 var user = await DbService.ValidateCredentialsAsync(email, password);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
                 if (user is null)
                 {
                     await DisplayAlert("Erreur", "Identifiants invalides", "OK");
                     return;
                 }
 
+<<<<<<< HEAD
                 Preferences.Default.Set("userEmail", user.Email);
+=======
+                // Navigation vers le dashboard après connexion réussie
+>>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
                 Application.Current!.Windows[0].Page = new AppShell();
             }
             catch (Exception ex)

@@ -70,12 +70,15 @@ build_metadata.AdditionalFiles.ManifestResourceName = Projet_Budget_M1.Views.Log
 build_metadata.AdditionalFiles.TargetPath = Views\LoginPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Views\LoginPage.xaml
 
+<<<<<<< HEAD
 [C:/xampp/htdocs/Projet-budgets-mobile-dev/Projet-budgets-mobile/Views/ProfilePage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Projet_Budget_M1.Views.ProfilePage.xaml
 build_metadata.AdditionalFiles.TargetPath = Views\ProfilePage.xaml
 build_metadata.AdditionalFiles.RelativePath = Views\ProfilePage.xaml
 
+=======
+>>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
 [C:/xampp/htdocs/Projet-budgets-mobile-dev/Projet-budgets-mobile/Views/RegisterPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Projet_Budget_M1.Views.RegisterPage.xaml
@@ -88,12 +91,15 @@ build_metadata.AdditionalFiles.ManifestResourceName = Projet_Budget_M1.Views.Sta
 build_metadata.AdditionalFiles.TargetPath = Views\StatisticsPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Views\StatisticsPage.xaml
 
+<<<<<<< HEAD
 [C:/xampp/htdocs/Projet-budgets-mobile-dev/Projet-budgets-mobile/Views/TransactionEditPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Projet_Budget_M1.Views.TransactionEditPage.xaml
 build_metadata.AdditionalFiles.TargetPath = Views\TransactionEditPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Views\TransactionEditPage.xaml
 
+=======
+>>>>>>> 43361390fb5f57f4fc27263a5a4514720fda8168
 [C:/xampp/htdocs/Projet-budgets-mobile-dev/Projet-budgets-mobile/Views/TransactionsPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Projet_Budget_M1.Views.TransactionsPage.xaml

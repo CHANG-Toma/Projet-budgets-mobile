@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Microsoft.Maui.ApplicationModel.DataTransfer;
 using Microsoft.Maui.Storage;
 using Projet_Budget_M1.Commands;
 using Projet_Budget_M1.Models;
@@ -186,6 +187,7 @@ namespace Projet_Budget_M1.ViewModels
         public ICommand ToggleFilterPanelCommand { get; }
         public ICommand ResetFiltersCommand { get; }
         public ICommand ToggleSortCommand { get; }
+        public ICommand ExportPdfCommand { get; }
 
         public bool SortAscending
         {
@@ -218,6 +220,7 @@ namespace Projet_Budget_M1.ViewModels
             ToggleFilterPanelCommand = new RelayCommand(() => IsFilterPanelVisible = !IsFilterPanelVisible);
             ResetFiltersCommand = new RelayCommand(ResetFilters);
             ToggleSortCommand = new RelayCommand(() => SortAscending = !SortAscending);
+            ExportPdfCommand = new RelayCommand(async () => await ExportToPdf());
         }
 
         public async Task LoadAsync(string? search = null)
@@ -354,6 +357,90 @@ namespace Projet_Budget_M1.ViewModels
             FilterDateStart = null;
             FilterDateEnd = null;
             ApplyFilters();
+        }
+
+        private async Task ExportToPdf()
+        {
+            if (TransactionGroups.Count == 0)
+            {
+                await Application.Current!.MainPage!.DisplayAlert("Information", "Aucune transaction à exporter", "OK");
+                return;
+            }
+
+            // Demander le type d'export
+            var exportType = await Application.Current!.MainPage!.DisplayActionSheet(
+                "Exporter en PDF",
+                "Annuler",
+                null,
+                "Toutes les transactions",
+                "Par mois",
+                "Par catégorie");
+
+            if (exportType == "Annuler" || string.IsNullOrEmpty(exportType))
+                return;
+
+            try
+            {
+                IsLoading = true;
+
+                // Récupérer toutes les transactions filtrées
+                var allFilteredTransactions = new List<Transaction>();
+                foreach (var group in TransactionGroups)
+                {
+                    allFilteredTransactions.AddRange(group);
+                }
+
+                string pdfPath;
+                string exportTypeParam = exportType switch
+                {
+                    "Par mois" => "month",
+                    "Par catégorie" => "category",
+                    _ => "all"
+                };
+
+                string? filterValue = exportType switch
+                {
+                    "Par mois" => FilterDateStart.HasValue 
+                        ? FilterDateStart.Value.ToString("MMMM yyyy") 
+                        : DateTime.Now.ToString("MMMM yyyy"),
+                    "Par catégorie" => FilterCategory != "Toutes" ? FilterCategory : null,
+                    _ => null
+                };
+
+                pdfPath = await PdfService.GenerateTransactionsPdfAsync(
+                    allFilteredTransactions, 
+                    exportTypeParam, 
+                    filterValue);
+
+                // Partager/sauvegarder le fichier
+                await ShareFile(pdfPath);
+            }
+            catch (Exception ex)
+            {
+                await Application.Current!.MainPage!.DisplayAlert("Erreur", 
+                    $"Erreur lors de la génération du PDF: {ex.Message}", "OK");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task ShareFile(string filePath)
+        {
+            try
+            {
+                await Share.Default.RequestAsync(new ShareFileRequest
+                {
+                    Title = "Exporter les transactions",
+                    File = new ShareFile(filePath)
+                });
+            }
+            catch (Exception ex)
+            {
+                await Application.Current!.MainPage!.DisplayAlert("Information", 
+                    $"PDF généré avec succès!\nEmplacement: {filePath}\n\nErreur lors du partage: {ex.Message}", "OK");
+            }
         }
 
         private void OpenAddForm()

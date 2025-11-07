@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Microsoft.Maui.Storage;
@@ -32,8 +33,9 @@ namespace Projet_Budget_M1.ViewModels
         private DateTime? _filterDateStart = null;
         private DateTime? _filterDateEnd = null;
         private List<Transaction> _allTransactions = new();
+        private bool _sortAscending = false; // false = décroissant (plus récent en premier)
 
-        public ObservableCollection<Transaction> Transactions { get; } = new();
+        public ObservableCollection<TransactionGroup> TransactionGroups { get; } = new();
 
         public string SearchText
         {
@@ -183,6 +185,22 @@ namespace Projet_Budget_M1.ViewModels
         public ICommand NavigateBudgetCommand { get; }
         public ICommand ToggleFilterPanelCommand { get; }
         public ICommand ResetFiltersCommand { get; }
+        public ICommand ToggleSortCommand { get; }
+
+        public bool SortAscending
+        {
+            get => _sortAscending;
+            set
+            {
+                if (SetProperty(ref _sortAscending, value))
+                {
+                    OnPropertyChanged(nameof(SortButtonText));
+                    ApplyFilters();
+                }
+            }
+        }
+
+        public string SortButtonText => SortAscending ? "📅 ↑" : "📅 ↓";
 
         public TransactionsViewModel()
         {
@@ -199,6 +217,7 @@ namespace Projet_Budget_M1.ViewModels
             NavigateBudgetCommand = new RelayCommand(async () => await Shell.Current.GoToAsync("//BudgetPage"));
             ToggleFilterPanelCommand = new RelayCommand(() => IsFilterPanelVisible = !IsFilterPanelVisible);
             ResetFiltersCommand = new RelayCommand(ResetFilters);
+            ToggleSortCommand = new RelayCommand(() => SortAscending = !SortAscending);
         }
 
         public async Task LoadAsync(string? search = null)
@@ -256,10 +275,76 @@ namespace Projet_Budget_M1.ViewModels
                 filtered = filtered.Where(t => t.Date <= FilterDateEnd.Value.Date.AddDays(1).AddTicks(-1));
             }
 
-            Transactions.Clear();
-            foreach (var t in filtered.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id))
+            // Trier les transactions
+            var sorted = SortAscending
+                ? filtered.OrderBy(t => t.Date).ThenBy(t => t.Id)
+                : filtered.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id);
+
+            // Grouper par date
+            GroupTransactions(sorted.ToList());
+        }
+
+        private void GroupTransactions(List<Transaction> transactions)
+        {
+            TransactionGroups.Clear();
+
+            if (transactions.Count == 0)
+                return;
+
+            var today = DateTime.Today;
+            var thisWeekStart = today.AddDays(-(int)today.DayOfWeek);
+            var thisMonthStart = new DateTime(today.Year, today.Month, 1);
+            var lastMonthStart = thisMonthStart.AddMonths(-1);
+
+            var grouped = transactions.GroupBy(t =>
             {
-                Transactions.Add(t);
+                var date = t.Date.Date;
+                
+                if (date == today)
+                    return "Aujourd'hui";
+                else if (date >= thisWeekStart && date < today)
+                    return "Cette semaine";
+                else if (date >= thisMonthStart && date < thisWeekStart)
+                    return "Ce mois";
+                else if (date >= lastMonthStart && date < thisMonthStart)
+                    return "Mois dernier";
+                else if (date.Year == today.Year)
+                    return date.ToString("MMMM yyyy", new System.Globalization.CultureInfo("fr-FR"));
+                else
+                    return date.ToString("yyyy");
+            });
+
+            // Trier les groupes selon l'ordre de tri
+            var orderedGroups = SortAscending
+                ? grouped.OrderBy(g =>
+                {
+                    var groupName = g.Key;
+                    if (groupName == "Aujourd'hui") return 1;
+                    if (groupName == "Cette semaine") return 2;
+                    if (groupName == "Ce mois") return 3;
+                    if (groupName == "Mois dernier") return 4;
+                    var firstDate = g.First().Date;
+                    return (int)(firstDate - DateTime.MinValue).TotalDays;
+                })
+                : grouped.OrderByDescending(g =>
+                {
+                    var groupName = g.Key;
+                    if (groupName == "Aujourd'hui") return int.MaxValue;
+                    if (groupName == "Cette semaine") return int.MaxValue - 1;
+                    if (groupName == "Ce mois") return int.MaxValue - 2;
+                    if (groupName == "Mois dernier") return int.MaxValue - 3;
+                    var firstDate = g.First().Date;
+                    return (int)(firstDate - DateTime.MinValue).TotalDays;
+                });
+
+            foreach (var group in orderedGroups)
+            {
+                var transactionGroup = new TransactionGroup(group.Key, group.First().Date);
+                foreach (var transaction in group)
+                {
+                    transactionGroup.Add(transaction);
+                }
+                TransactionGroups.Add(transactionGroup);
             }
         }
 

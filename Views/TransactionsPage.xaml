@@ -1,19 +1,35 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Projet_Budget_M1.Converters"
              x:Class="Projet_Budget_M1.Views.TransactionsPage"
              Title="Transactions"
              BackgroundColor="#F5F5F5">
+    <ContentPage.Resources>
+        <local:AmountToColorConverter x:Key="AmountToColorConverter" />
+    </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*,Auto">
         <!-- Header & Search -->
         <VerticalStackLayout Grid.Row="0" Spacing="12" Padding="20,10">
             <Label Text="Transactions" FontSize="24" FontAttributes="Bold" TextColor="#2C3E50" />
-            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
                 <Frame Grid.Column="0" Padding="0" BackgroundColor="White" CornerRadius="12" HasShadow="False">
                     <Entry Placeholder="Rechercher une transaction..." BackgroundColor="Transparent" TextColor="#2C3E50" HeightRequest="45" Text="{Binding SearchText, Mode=TwoWay}" />
                 </Frame>
                 <Button Grid.Column="1" 
+                        Text="{Binding SortButtonText}" 
+                        FontSize="16" 
+                        WidthRequest="45" 
+                        HeightRequest="45" 
+                        CornerRadius="12" 
+                        BackgroundColor="#9B59B6" 
+                        TextColor="White" 
+                        Command="{Binding ToggleSortCommand}"
+                        VerticalOptions="Center"
+                        HorizontalOptions="Center"
+                        Padding="0" />
+                <Button Grid.Column="2" 
                         Text="🔍" 
                         FontSize="18" 
                         WidthRequest="45" 
@@ -25,7 +41,7 @@
                         VerticalOptions="Center"
                         HorizontalOptions="Center"
                         Padding="0" />
-                <Button Grid.Column="2" Text="＋" FontSize="20" WidthRequest="45" HeightRequest="45" CornerRadius="12" BackgroundColor="#2C3E50" TextColor="White" Command="{Binding AddTransactionCommand}" />
+                <Button Grid.Column="3" Text="＋" FontSize="20" WidthRequest="45" HeightRequest="45" CornerRadius="12" BackgroundColor="#2C3E50" TextColor="White" Command="{Binding AddTransactionCommand}" />
             </Grid>
             
             <!-- Panneau de filtres -->
@@ -84,10 +100,20 @@
         </VerticalStackLayout>
 
         <!-- List -->
-        <CollectionView Grid.Row="1" ItemsSource="{Binding Transactions}" SelectionMode="None">
+        <CollectionView Grid.Row="1" ItemsSource="{Binding TransactionGroups}" SelectionMode="None" IsGrouped="True">
+            <CollectionView.GroupHeaderTemplate>
+                <DataTemplate>
+                    <Frame Margin="16,12,16,4" Padding="12,8" CornerRadius="10" BackgroundColor="#E8F4F8" HasShadow="False">
+                        <Label Text="{Binding GroupName}" 
+                               FontSize="16" 
+                               FontAttributes="Bold" 
+                               TextColor="#2C3E50" />
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.GroupHeaderTemplate>
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Frame Margin="16,8" Padding="16" CornerRadius="16" HasShadow="True" BackgroundColor="White">
+                    <Frame Margin="16,4" Padding="16" CornerRadius="16" HasShadow="True" BackgroundColor="White">
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
                             <Label Grid.Row="0" Grid.Column="0" Text="{Binding Title}" FontSize="18" TextColor="#2C3E50" />
                             <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="8">
@@ -98,8 +124,12 @@
                                 <Frame Padding="8,4" CornerRadius="10" BackgroundColor="#ECF0F1" HasShadow="False">
                                     <Label Text="{Binding Category}" FontSize="12" TextColor="#2C3E50" />
                                 </Frame>
-                                <Label Text="{Binding Date, StringFormat='{}{0:dd MMM}'}" FontSize="12" TextColor="#7F8C8D" />
-                                <Label Text="{Binding Amount, StringFormat='{}{0:+0.00;-0.00} €'}" FontSize="16" TextColor="#27AE60" />
+                                <Label Text="{Binding Date, StringFormat='{}{0:dd MMM yyyy}'}" FontSize="12" TextColor="#7F8C8D" />
+                                <Label Text="{Binding Amount, StringFormat='{}{0:+0.00;-0.00} €'}" FontSize="16">
+                                    <Label.TextColor>
+                                        <Binding Path="Amount" Converter="{StaticResource AmountToColorConverter}" />
+                                    </Label.TextColor>
+                                </Label>
                             </HorizontalStackLayout>
                         </Grid>
                     </Frame>

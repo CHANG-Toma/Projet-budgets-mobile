@@ -13,7 +13,7 @@
         <!-- Header & Search -->
         <VerticalStackLayout Grid.Row="0" Spacing="12" Padding="20,10">
             <Label Text="Transactions" FontSize="24" FontAttributes="Bold" TextColor="#2C3E50" />
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
                 <Frame Grid.Column="0" Padding="0" BackgroundColor="White" CornerRadius="12" HasShadow="False">
                     <Entry Placeholder="Rechercher une transaction..." BackgroundColor="Transparent" TextColor="#2C3E50" HeightRequest="45" Text="{Binding SearchText, Mode=TwoWay}" />
                 </Frame>
@@ -41,7 +41,19 @@
                         VerticalOptions="Center"
                         HorizontalOptions="Center"
                         Padding="0" />
-                <Button Grid.Column="3" Text="＋" FontSize="20" WidthRequest="45" HeightRequest="45" CornerRadius="12" BackgroundColor="#2C3E50" TextColor="White" Command="{Binding AddTransactionCommand}" />
+                <Button Grid.Column="3" 
+                        Text="📄" 
+                        FontSize="18" 
+                        WidthRequest="45" 
+                        HeightRequest="45" 
+                        CornerRadius="12" 
+                        BackgroundColor="#E67E22" 
+                        TextColor="White" 
+                        Command="{Binding ExportPdfCommand}"
+                        VerticalOptions="Center"
+                        HorizontalOptions="Center"
+                        Padding="0" />
+                <Button Grid.Column="4" Text="＋" FontSize="20" WidthRequest="45" HeightRequest="45" CornerRadius="12" BackgroundColor="#2C3E50" TextColor="White" Command="{Binding AddTransactionCommand}" />
             </Grid>
             
             <!-- Panneau de filtres -->

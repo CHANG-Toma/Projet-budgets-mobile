@@ -8,23 +8,23 @@ namespace Projet_Budget_M1.Views
         }
 
         // Navigation vers les autres pages
-        private async void OnHomeClicked(object sender, EventArgs e)
+        private async void OnHomeTapped(object sender, EventArgs e)
         {
             await Shell.Current.GoToAsync("//DashboardPage");
         }
 
-        private async void OnTransactionsClicked(object sender, EventArgs e)
+        private async void OnTransactionsTapped(object sender, EventArgs e)
         {
             await Shell.Current.GoToAsync("//TransactionsPage");
         }
 
-        private async void OnStatisticsClicked(object sender, EventArgs e)
+        private async void OnStatisticsTapped(object sender, EventArgs e)
         {
             // On est déjà sur la page statistiques
             await DisplayAlert("Navigation", "Vous êtes déjà sur la page statistiques", "OK");
         }
 
-        private async void OnBudgetClicked(object sender, EventArgs e)
+        private async void OnBudgetTapped(object sender, EventArgs e)
         {
             await Shell.Current.GoToAsync("//BudgetPage");
         }

@@ -344,5 +344,274 @@
                 VerticalOptions="End"
                 Margin="0,0,20,80"
                 Clicked="OnAddTransactionClicked" />
+
+        <!-- Overlay pour le formulaire de transaction -->
+        <Grid x:Name="TransactionOverlay"
+              Grid.Row="0"
+              Grid.RowSpan="2"
+              BackgroundColor="#80000000"
+              IsVisible="False">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnOverlayTapped"/>
+            </Grid.GestureRecognizers>
+            
+            <!-- Modal centré -->
+            <Frame x:Name="TransactionFormFrame"
+                   BackgroundColor="White"
+                   CornerRadius="20"
+                   Padding="0"
+                   Margin="20"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   WidthRequest="380"
+                   MaximumWidthRequest="450"
+                   MinimumWidthRequest="320"
+                   HasShadow="True">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnFormFrameTapped"/>
+                </Frame.GestureRecognizers>
+                
+                <Grid RowDefinitions="Auto,*" RowSpacing="0">
+                        
+                        <!-- Header bleu foncé -->
+                        <Frame Grid.Row="0"
+                               BackgroundColor="#2C3E50"
+                               CornerRadius="20,20,0,0"
+                               Padding="20,18"
+                               Margin="0,0,0,0"
+                               HasShadow="False">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Button Grid.Column="0"
+                                        Text="✕"
+                                        FontSize="18"
+                                        FontAttributes="Bold"
+                                        TextColor="White"
+                                        BackgroundColor="Transparent"
+                                        BorderWidth="0"
+                                        WidthRequest="35"
+                                        HeightRequest="35"
+                                        CornerRadius="17"
+                                        Clicked="OnCloseTransactionFormClicked" />
+                                <Label Grid.Column="1"
+                                       Text="Nouvelle dépense"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center" />
+                                <!-- Colonne vide pour équilibrer -->
+                                <BoxView Grid.Column="2" 
+                                         WidthRequest="35"
+                                         HeightRequest="35"
+                                         BackgroundColor="Transparent" />
+                            </Grid>
+                        </Frame>
+
+                        <!-- Contenu du formulaire -->
+                        <ScrollView Grid.Row="1" 
+                                   MaximumHeightRequest="600"
+                                   VerticalScrollBarVisibility="Never">
+                            <VerticalStackLayout Padding="25" Spacing="18">
+                                
+                                <!-- Champ Titre -->
+                                <VerticalStackLayout Spacing="5">
+                                    <HorizontalStackLayout Spacing="5">
+                                        <Label Text="Titre"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="#2C3E50" />
+                                        <Label Text="*"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="#E74C3C" />
+                                    </HorizontalStackLayout>
+                                    <Frame BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Label Grid.Column="0"
+                                                   Text="📝"
+                                                   FontSize="16"
+                                                   VerticalOptions="Center"
+                                                   Margin="0,0,10,0" />
+                                            <Entry x:Name="TitleEntry"
+                                                   Grid.Column="1"
+                                                   Placeholder="Ex: Courses, Salaire..."
+                                                   BackgroundColor="Transparent"
+                                                   TextColor="#2C3E50"
+                                                   PlaceholderColor="#95A5A6"
+                                                   FontSize="16" />
+                                        </Grid>
+                                    </Frame>
+                                </VerticalStackLayout>
+
+                                <!-- Champ Montant -->
+                                <VerticalStackLayout Spacing="5">
+                                    <HorizontalStackLayout Spacing="5">
+                                        <Label Text="Montant (€)"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="#2C3E50" />
+                                        <Label Text="*"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="#E74C3C" />
+                                    </HorizontalStackLayout>
+                                    <Frame BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Label Grid.Column="0"
+                                                   Text="💰"
+                                                   FontSize="16"
+                                                   VerticalOptions="Center"
+                                                   Margin="0,0,10,0" />
+                                            <Entry x:Name="AmountEntry"
+                                                   Grid.Column="1"
+                                                   Text="0.00"
+                                                   Keyboard="Numeric"
+                                                   BackgroundColor="Transparent"
+                                                   TextColor="#2C3E50"
+                                                   FontSize="16" />
+                                        </Grid>
+                                    </Frame>
+                                </VerticalStackLayout>
+
+                                <!-- Champ Catégorie -->
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="Catégorie"
+                                           FontSize="14"
+                                           FontAttributes="Bold"
+                                           TextColor="#2C3E50" />
+                                    <Frame BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Label x:Name="CategoryIcon"
+                                                   Grid.Column="0"
+                                                   Text="🍽️"
+                                                   FontSize="18"
+                                                   VerticalOptions="Center"
+                                                   Margin="0,0,10,0" />
+                                            <Picker x:Name="CategoryPicker"
+                                                    Grid.Column="1"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="#2C3E50"
+                                                    Title=""
+                                                    FontSize="16"
+                                                    SelectedIndexChanged="OnCategorySelected">
+                                                <Picker.ItemsSource>
+                                                    <x:Array Type="{x:Type x:String}">
+                                                        <x:String>Alimentation</x:String>
+                                                        <x:String>Transport</x:String>
+                                                        <x:String>Logement</x:String>
+                                                        <x:String>Santé</x:String>
+                                                        <x:String>Loisirs</x:String>
+                                                        <x:String>Autres</x:String>
+                                                    </x:Array>
+                                                </Picker.ItemsSource>
+                                            </Picker>
+                                            <Label Text="▼"
+                                                   Grid.Column="2"
+                                                   FontSize="12"
+                                                   TextColor="#7F8C8D"
+                                                   VerticalOptions="Center"
+                                                   HorizontalOptions="End"
+                                                   Margin="5,0,0,0" />
+                                        </Grid>
+                                    </Frame>
+                                </VerticalStackLayout>
+
+                                <!-- Champ Date -->
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="Date"
+                                           FontSize="14"
+                                           FontAttributes="Bold"
+                                           TextColor="#2C3E50" />
+                                    <Frame BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <DatePicker x:Name="DatePicker"
+                                                        Grid.Column="0"
+                                                        BackgroundColor="Transparent"
+                                                        TextColor="#2C3E50"
+                                                        FontSize="16"
+                                                        DateSelected="OnDateSelected" />
+                                            <Label Text="📅"
+                                                   Grid.Column="1"
+                                                   FontSize="18"
+                                                   VerticalOptions="Center"
+                                                   HorizontalOptions="End" />
+                                        </Grid>
+                                    </Frame>
+                                </VerticalStackLayout>
+
+                                <!-- Champ Note (optionnel) -->
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="Note (optionnel)"
+                                           FontSize="14"
+                                           FontAttributes="Bold"
+                                           TextColor="#2C3E50" />
+                                    <Frame BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,10"
+                                           HasShadow="False"
+                                           BorderColor="Transparent">
+                                        <Editor x:Name="NoteEditor"
+                                                Placeholder="Ajouter une note..."
+                                                BackgroundColor="Transparent"
+                                                TextColor="#2C3E50"
+                                                PlaceholderColor="#95A5A6"
+                                                FontSize="16"
+                                                AutoSize="TextChanges"
+                                                MinimumHeightRequest="80"
+                                                MaximumHeightRequest="120" />
+                                    </Frame>
+                                </VerticalStackLayout>
+
+                                <!-- Boutons d'action -->
+                                <Grid ColumnDefinitions="*,*" 
+                                      ColumnSpacing="10"
+                                      Margin="0,15,0,25">
+                                    <Button Grid.Column="0"
+                                            Text="Annuler"
+                                            FontSize="16"
+                                            FontAttributes="Bold"
+                                            TextColor="#7F8C8D"
+                                            BackgroundColor="#ECF0F1"
+                                            CornerRadius="10"
+                                            Padding="0,12"
+                                            Clicked="OnCloseTransactionFormClicked" />
+                                    <Button Grid.Column="1"
+                                            Text="Enregistrer"
+                                            FontSize="16"
+                                            FontAttributes="Bold"
+                                            TextColor="White"
+                                            BackgroundColor="#2C3E50"
+                                            CornerRadius="10"
+                                            Padding="0,12"
+                                            Clicked="OnSaveTransactionClicked" />
+                                </Grid>
+
+                            </VerticalStackLayout>
+                        </ScrollView>
+
+                </Grid>
+            </Frame>
+        </Grid>
+
     </Grid>
 </ContentPage>

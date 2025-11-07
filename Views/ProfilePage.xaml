@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Projet_Budget_M1.Views.ProfilePage"
+             Title="Profil"
+             BackgroundColor="#F5F5F5">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+            <!-- Avatar -->
+            <Frame BackgroundColor="#2C3E50"
+                   CornerRadius="60"
+                   WidthRequest="120"
+                   HeightRequest="120"
+                   HorizontalOptions="Center"
+                   Margin="0,20,0,0">
+                <Label Text="👤"
+                       FontSize="60"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"
+                       TextColor="White" />
+            </Frame>
+
+            <!-- Nom complet -->
+            <Frame BackgroundColor="White" CornerRadius="12" Padding="16" HasShadow="True">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Nom complet" FontSize="12" TextColor="#7F8C8D" />
+                    <Entry x:Name="FullNameEntry" TextColor="#2C3E50" FontSize="16" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Email -->
+            <Frame BackgroundColor="White" CornerRadius="12" Padding="16" HasShadow="True">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Email" FontSize="12" TextColor="#7F8C8D" />
+                    <Label x:Name="EmailLabel" TextColor="#2C3E50" FontSize="16" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Date de création -->
+            <Frame BackgroundColor="White" CornerRadius="12" Padding="16" HasShadow="True">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Date de création du compte" FontSize="12" TextColor="#7F8C8D" />
+                    <Label x:Name="CreatedAtLabel" TextColor="#2C3E50" FontSize="16" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Bouton enregistrer -->
+            <Button Text="Enregistrer les modifications"
+                    BackgroundColor="#2C3E50"
+                    TextColor="White"
+                    HeightRequest="52"
+                    CornerRadius="12"
+                    Clicked="OnSaveClicked" />
+
+            <!-- Bouton déconnexion -->
+            <Button Text="Se déconnecter"
+                    BackgroundColor="#E74C3C"
+                    TextColor="White"
+                    HeightRequest="52"
+                    CornerRadius="12"
+                    Clicked="OnLogoutClicked" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
+

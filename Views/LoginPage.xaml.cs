@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.Maui.Storage;
 using Projet_Budget_M1.Services;
 
 namespace Projet_Budget_M1.Views
@@ -31,14 +32,13 @@ namespace Projet_Budget_M1.Views
             try
             {
                 var user = await DbService.ValidateCredentialsAsync(email, password);
-
                 if (user is null)
-                {
+            {
                     await DisplayAlert("Erreur", "Identifiants invalides", "OK");
                     return;
                 }
 
-                // Navigation vers le dashboard après connexion réussie
+                Preferences.Default.Set("userEmail", user.Email);
                 Application.Current!.Windows[0].Page = new AppShell();
             }
             catch (Exception ex)

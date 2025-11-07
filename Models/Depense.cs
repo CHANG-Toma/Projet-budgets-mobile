@@ -6,7 +6,7 @@ public class Depense
 {
     public int IdDepense { get; set; }
     public DateTime DateDepense { get; set; }
-    public int Montant { get; set; }
+    public double Montant { get; set; } // Changé de int à double pour supporter les décimales
     public string Description { get; set; } = string.Empty;
     public int IdMoyen { get; set; }
     public string IdBudget { get; set; } = string.Empty;

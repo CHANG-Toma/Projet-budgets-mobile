@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Projet_Budget_M1.Views.TransactionEditPage"
+             Title="Transaction"
+             BackgroundColor="#F5F5F5">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="16" Padding="20">
+            <Entry x:Name="TitleEntry" Placeholder="Titre" BackgroundColor="White" TextColor="#2C3E50" HeightRequest="50" />
+            <Entry x:Name="AmountEntry" Placeholder="Montant (ex: -85.50)" Keyboard="Numeric" BackgroundColor="White" TextColor="#2C3E50" HeightRequest="50" />
+            <DatePicker x:Name="DatePicker" BackgroundColor="White" TextColor="#2C3E50" />
+            <Entry x:Name="CategoryEntry" Placeholder="Catégorie" BackgroundColor="White" TextColor="#2C3E50" HeightRequest="50" />
+
+            <Button Text="Enregistrer" BackgroundColor="#2C3E50" TextColor="White" HeightRequest="52" Clicked="OnSaveClicked" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
+
+

@@ -15,6 +15,8 @@ namespace Projet_Budget_M1
             Routing.RegisterRoute(nameof(TransactionsPage), typeof(TransactionsPage));
             Routing.RegisterRoute(nameof(StatisticsPage), typeof(StatisticsPage));
             Routing.RegisterRoute(nameof(BudgetPage), typeof(BudgetPage));
+            Routing.RegisterRoute(nameof(TransactionEditPage), typeof(TransactionEditPage));
+            Routing.RegisterRoute(nameof(ProfilePage), typeof(ProfilePage));
         }
     }
 }

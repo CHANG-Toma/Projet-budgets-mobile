@@ -52,9 +52,7 @@ namespace Projet_Budget_M1.Views
                 }
 
                 await DisplayAlert("Succès", $"Inscription réussie pour {fullName} ({email})", "OK");
-
-                // Naviguer vers la page d'accueil après inscription réussie
-                Application.Current!.Windows[0].Page = new AppShell();
+                await Navigation.PushAsync(new LoginPage());
             }
             catch (Exception ex)
             {

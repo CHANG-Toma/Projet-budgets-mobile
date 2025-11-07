@@ -1,13 +1,18 @@
+using System;
 using Microsoft.Maui.Storage;
+using Projet_Budget_M1.Models;
 using Projet_Budget_M1.Services;
 
 namespace Projet_Budget_M1.Views
 {
     public partial class DashboardPage : ContentPage
     {
+        private string _currentUserEmail = string.Empty;
+
         public DashboardPage()
         {
             InitializeComponent();
+            _currentUserEmail = Preferences.Default.Get("userEmail", "");
             InitializeTransactionForm();
         }
 
@@ -109,6 +114,12 @@ namespace Projet_Budget_M1.Views
         private async void OnSaveTransactionClicked(object sender, EventArgs e)
         {
             // Validation
+            if (string.IsNullOrWhiteSpace(_currentUserEmail))
+            {
+                await DisplayAlert("Information", "Utilisateur non défini. Connectez-vous d'abord.", "OK");
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(TitleEntry.Text))
             {
                 await DisplayAlert("Erreur", "Le titre est obligatoire", "OK");
@@ -116,40 +127,50 @@ namespace Projet_Budget_M1.Views
             }
 
             if (string.IsNullOrWhiteSpace(AmountEntry.Text) || 
-                !double.TryParse(AmountEntry.Text, out double amount) || 
-                amount <= 0)
+                !double.TryParse(AmountEntry.Text.Replace(",", "."), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double amount))
             {
-                await DisplayAlert("Erreur", "Le montant doit être un nombre positif", "OK");
+                await DisplayAlert("Erreur", "Le montant doit être un nombre valide", "OK");
                 return;
             }
 
-            // Ici, vous pouvez ajouter la logique pour sauvegarder la transaction
-            // Par exemple, appeler un ViewModel ou un service
-            
-            string category = CategoryPicker.SelectedItem?.ToString() ?? "Non définie";
-            string note = NoteEditor.Text;
-            DateTime date = DatePicker.Date;
+            try
+            {
+                // Créer une nouvelle transaction
+                var transaction = new Transaction
+                {
+                    Id = 0, // Nouvelle transaction
+                    OwnerEmail = _currentUserEmail,
+                    Date = DatePicker.Date
+                };
 
-            // Afficher un message de confirmation (temporaire)
-            await DisplayAlert("Dépense enregistrée", 
-                $"Titre: {TitleEntry.Text}\n" +
-                $"Montant: {amount} €\n" +
-                $"Catégorie: {category}\n" +
-                $"Date: {date:dd/MM/yyyy}", 
-                "OK");
+                transaction.Title = TitleEntry.Text.Trim();
+                transaction.Amount = amount;
+                transaction.Date = DatePicker.Date;
+                transaction.Category = CategoryPicker.SelectedItem?.ToString() ?? "Autres";
+                transaction.OwnerEmail = _currentUserEmail;
 
-            // Fermer l'overlay
-            TransactionOverlay.IsVisible = false;
-            
-            // Réinitialiser le formulaire
-            ResetTransactionForm();
+                // Sauvegarder via DbService
+                var id = await DbService.AddOrUpdateTransactionAsync(transaction);
+                transaction.Id = id;
+
+                await DisplayAlert("Succès", "Transaction enregistrée", "OK");
+
+                // Fermer l'overlay
+                TransactionOverlay.IsVisible = false;
+                
+                // Réinitialiser le formulaire
+                ResetTransactionForm();
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Erreur", $"Échec de l'enregistrement: {ex.Message}", "OK");
+            }
         }
 
         private void ResetTransactionForm()
         {
             TitleEntry.Text = string.Empty;
             AmountEntry.Text = "0.00";
-            NoteEditor.Text = string.Empty;
             DatePicker.Date = DateTime.Now;
             CategoryPicker.SelectedIndex = 0;
             CategoryIcon.Text = GetCategoryIcon("Alimentation");

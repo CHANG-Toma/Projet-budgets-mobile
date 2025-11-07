@@ -564,29 +564,6 @@
                                     </Frame>
                                 </VerticalStackLayout>
 
-                                <!-- Champ Note (optionnel) -->
-                                <VerticalStackLayout Spacing="5">
-                                    <Label Text="Note (optionnel)"
-                                           FontSize="14"
-                                           FontAttributes="Bold"
-                                           TextColor="#2C3E50" />
-                                    <Frame BackgroundColor="#ECF0F1"
-                                           CornerRadius="10"
-                                           Padding="15,10"
-                                           HasShadow="False"
-                                           BorderColor="Transparent">
-                                        <Editor x:Name="NoteEditor"
-                                                Placeholder="Ajouter une note..."
-                                                BackgroundColor="Transparent"
-                                                TextColor="#2C3E50"
-                                                PlaceholderColor="#95A5A6"
-                                                FontSize="16"
-                                                AutoSize="TextChanges"
-                                                MinimumHeightRequest="80"
-                                                MaximumHeightRequest="120" />
-                                    </Frame>
-                                </VerticalStackLayout>
-
                                 <!-- Boutons d'action -->
                                 <Grid ColumnDefinitions="*,*" 
                                       ColumnSpacing="10"

@@ -287,6 +287,30 @@ public static class DbService
         }
         return list;
     }
+
+    public static async Task<decimal?> GetCurrentMonthBudgetLimitAsync(string ownerEmail)
+    {
+        await using var connection = await OpenConnectionAsync();
+        
+        var user = await GetUserByEmailAsync(ownerEmail);
+        if (user == null) return null;
+        
+        var currentMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"SELECT limite FROM budgetmensuel 
+                            WHERE id_utilisateur=@id_utilisateur 
+                            AND mois=@mois 
+                            LIMIT 1";
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        cmd.Parameters.AddWithValue("@mois", currentMonth);
+        
+        var result = await cmd.ExecuteScalarAsync();
+        if (result == null || result == DBNull.Value)
+            return null;
+        
+        return Convert.ToDecimal(result);
+    }
 }
 
 public readonly record struct RegistrationResult(bool IsSuccess, string? ErrorMessage, bool EmailExists)

@@ -44,14 +44,31 @@ public static class DbService
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
 
+        // Séparer le nom complet en prénom et nom
+        var prenom = string.Empty;
+        var nom = string.Empty;
+        if (!string.IsNullOrWhiteSpace(fullName))
+        {
+            var parts = fullName.Trim().Split(' ', 2);
+            prenom = parts[0];
+            nom = parts.Length > 1 ? parts[1] : string.Empty;
+        }
+        else
+        {
+            // Si pas de nom complet, utiliser l'email comme prénom
+            prenom = email.Split('@')[0];
+        }
+
         try
         {
             await using var connection = await OpenConnectionAsync();
             await using var command = connection.CreateCommand();
-            command.CommandText = "INSERT INTO users (email, password_hash, fullname) VALUES (@email, @password_hash, @fullname)";
+            command.CommandText = "INSERT INTO utilisateur (nom, prénom, email, mot_de_passe, date_inscription) VALUES (@nom, @prenom, @email, @mot_de_passe, @date_inscription)";
+            command.Parameters.AddWithValue("@nom", nom);
+            command.Parameters.AddWithValue("@prenom", prenom);
             command.Parameters.AddWithValue("@email", email);
-            command.Parameters.AddWithValue("@password_hash", passwordHash);
-            command.Parameters.AddWithValue("@fullname", string.IsNullOrWhiteSpace(fullName) ? email : fullName);
+            command.Parameters.AddWithValue("@mot_de_passe", passwordHash);
+            command.Parameters.AddWithValue("@date_inscription", DateTime.Now);
 
             var rows = await command.ExecuteNonQueryAsync();
             return rows == 1 ? RegistrationResult.Success() : RegistrationResult.Failed("Aucune ligne affectée lors de l'inscription.");
@@ -77,7 +94,7 @@ public static class DbService
         {
             await using var connection = await OpenConnectionAsync();
             await using var command = connection.CreateCommand();
-            command.CommandText = "SELECT id, email, fullname, password_hash, created_at, updated_at FROM users WHERE email = @email LIMIT 1";
+            command.CommandText = "SELECT id_utilisateur, nom, prénom, email, mot_de_passe, date_inscription FROM utilisateur WHERE email = @email LIMIT 1";
             command.Parameters.AddWithValue("@email", email);
 
             await using var reader = await command.ExecuteReaderAsync();
@@ -85,12 +102,13 @@ public static class DbService
             {
                 return new UserAccount
                 {
-                    Id = Convert.ToUInt32(reader.GetValue(0)),
-                    Email = reader.GetString(1),
-                    FullName = reader.IsDBNull(2) ? null : reader.GetString(2),
-                    PasswordHash = reader.GetString(3),
-                    CreatedAt = reader.IsDBNull(4) ? DateTime.MinValue : reader.GetDateTime(4),
-                    UpdatedAt = reader.IsDBNull(5) ? DateTime.MinValue : reader.GetDateTime(5)
+                    IdUtilisateur = reader.GetInt32(0),
+                    Nom = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                    Prenom = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                    Email = reader.GetString(3),
+                    MotDePasse = reader.GetString(4),
+                    DateInscription = reader.IsDBNull(5) ? DateTime.MinValue : reader.GetDateTime(5),
+                    UpdatedAt = DateTime.Now // Pas de colonne updated_at dans le schéma, on utilise la date actuelle
                 };
             }
         }

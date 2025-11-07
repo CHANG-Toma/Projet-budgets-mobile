@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using MySqlConnector;
 using Projet_Budget_M1.Models;
 
@@ -113,6 +114,84 @@ public static class DbService
         {
             return (false, ex.Message);
         }
+    }
+
+    public static async Task<bool> UpdateUserFullNameAsync(string email, string newFullName)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return false;
+        await using var connection = await OpenConnectionAsync();
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = "UPDATE users SET fullname=@fullname WHERE email=@email";
+        cmd.Parameters.AddWithValue("@fullname", newFullName);
+        cmd.Parameters.AddWithValue("@email", email);
+        var rows = await cmd.ExecuteNonQueryAsync();
+        return rows > 0;
+    }
+
+    public static async Task<int> AddOrUpdateTransactionAsync(Transaction tx)
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var cmd = connection.CreateCommand();
+        if (tx.Id == 0)
+        {
+            cmd.CommandText = "INSERT INTO transactions (title, amount, date, category, owner_email) VALUES (@title, @amount, @date, @category, @owner_email); SELECT LAST_INSERT_ID();";
+        }
+        else
+        {
+            cmd.CommandText = "UPDATE transactions SET title=@title, amount=@amount, date=@date, category=@category WHERE id=@id AND owner_email=@owner_email; SELECT @id;";
+            cmd.Parameters.AddWithValue("@id", tx.Id);
+        }
+        cmd.Parameters.AddWithValue("@title", tx.Title);
+        cmd.Parameters.AddWithValue("@amount", tx.Amount);
+        cmd.Parameters.AddWithValue("@date", tx.Date);
+        cmd.Parameters.AddWithValue("@category", tx.Category);
+        cmd.Parameters.AddWithValue("@owner_email", tx.OwnerEmail);
+
+        var result = await cmd.ExecuteScalarAsync();
+        return Convert.ToInt32(result);
+    }
+
+    public static async Task<bool> DeleteTransactionAsync(int id, string ownerEmail)
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = "DELETE FROM transactions WHERE id=@id AND owner_email=@owner_email";
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.Parameters.AddWithValue("@owner_email", ownerEmail);
+        var rows = await cmd.ExecuteNonQueryAsync();
+        return rows > 0;
+    }
+
+    public static async Task<List<Transaction>> GetTransactionsAsync(string ownerEmail, string? search = null)
+    {
+        var list = new List<Transaction>();
+        await using var connection = await OpenConnectionAsync();
+        await using var cmd = connection.CreateCommand();
+        if (string.IsNullOrWhiteSpace(search))
+        {
+            cmd.CommandText = "SELECT id, title, amount, date, category, owner_email FROM transactions WHERE owner_email=@owner_email ORDER BY date DESC, id DESC";
+        }
+        else
+        {
+            cmd.CommandText = "SELECT id, title, amount, date, category, owner_email FROM transactions WHERE owner_email=@owner_email AND (title LIKE @q OR category LIKE @q) ORDER BY date DESC, id DESC";
+            cmd.Parameters.AddWithValue("@q", $"%{search}%");
+        }
+        cmd.Parameters.AddWithValue("@owner_email", ownerEmail);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new Transaction
+            {
+                Id = reader.GetInt32(0),
+                Title = reader.GetString(1),
+                Amount = reader.GetDouble(2),
+                Date = reader.GetDateTime(3),
+                Category = reader.GetString(4),
+                OwnerEmail = reader.GetString(5)
+            });
+        }
+        return list;
     }
 }
 

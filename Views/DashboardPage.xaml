@@ -10,21 +10,23 @@
         <ScrollView Grid.Row="0">
             <VerticalStackLayout Padding="20" Spacing="20">
 
-                <!-- Header avec photo de profil -->
+                <!-- Header avec salutation et photo de profil -->
                 <Grid ColumnDefinitions="*,Auto">
                     <VerticalStackLayout Grid.Column="0" Spacing="5">
-                        <Label Text="Tableau de bord"
-                               FontSize="28"
+                        <Label x:Name="GreetingLabel"
+                               Text="Bonjour"
+                               FontSize="24"
                                FontAttributes="Bold"
                                TextColor="#2C3E50" />
-                        <Label Text="Octobre 2025"
+                        <Label Text="Tableau de bord"
                                FontSize="16"
                                TextColor="#7F8C8D" />
                     </VerticalStackLayout>
                     
-                    <!-- Photo de profil -->
+                    <!-- Photo de profil cliquable -->
                     <Frame Grid.Column="1"
-                           BackgroundColor="#ECF0F1"
+                           x:Name="ProfileButton"
+                           BackgroundColor="#2C3E50"
                            CornerRadius="25"
                            WidthRequest="50"
                            HeightRequest="50"
@@ -34,7 +36,10 @@
                                FontSize="24"
                                HorizontalOptions="Center"
                                VerticalOptions="Center"
-                               TextColor="#7F8C8D" />
+                               TextColor="White" />
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnProfileTapped" />
+                        </Frame.GestureRecognizers>
                     </Frame>
                 </Grid>
 

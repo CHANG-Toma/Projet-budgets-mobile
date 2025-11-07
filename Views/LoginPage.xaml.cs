@@ -1,4 +1,7 @@
-using Projet_Budget_M1.ViewModels;
+using System;
+using System.Threading.Tasks;
+using Microsoft.Maui.Storage;
+using Projet_Budget_M1.Services;
 
 namespace Projet_Budget_M1.Views
 {
@@ -11,13 +14,12 @@ namespace Projet_Budget_M1.Views
 
         private async void OnLoginClicked(object sender, EventArgs e)
         {
-            var email = EmailEntry.Text;
-            var password = PasswordEntry.Text;
+            var email = EmailEntry.Text?.Trim() ?? string.Empty;
+            var password = PasswordEntry.Text ?? string.Empty;
 
-            // Validation basique - seulement email requis
-            if (string.IsNullOrWhiteSpace(email))
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
-                await DisplayAlert("Erreur", "Veuillez entrer votre email", "OK");
+                await DisplayAlert("Erreur", "Veuillez entrer votre email et votre mot de passe", "OK");
                 return;
             }
 
@@ -27,12 +29,16 @@ namespace Projet_Budget_M1.Views
                 return;
             }
 
-            // Simulation de la connexion
             try
             {
-                await Task.Delay(1000); // Simule un appel API - 1s
-                
-                // Navigation vers le dashboard après connexion réussie
+                var user = await DbService.ValidateCredentialsAsync(email, password);
+                if (user is null)
+                {
+                    await DisplayAlert("Erreur", "Identifiants invalides", "OK");
+                    return;
+                }
+
+                Preferences.Default.Set("userEmail", user.Email);
                 Application.Current!.Windows[0].Page = new AppShell();
             }
             catch (Exception ex)

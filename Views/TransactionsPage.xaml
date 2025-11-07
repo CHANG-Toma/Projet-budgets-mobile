@@ -5,18 +5,44 @@
              Title="Transactions"
              BackgroundColor="#F5F5F5">
 
-    <Grid RowDefinitions="*,Auto">
-        <!-- Main Content -->
-        <ScrollView Grid.Row="0">
-            <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="20" Padding="20">
-                <Label Text="📋" FontSize="60" HorizontalOptions="Center" />
-                <Label Text="Transactions" FontSize="24" FontAttributes="Bold" TextColor="#2C3E50" HorizontalOptions="Center" />
-                <Label Text="Page en cours de développement" FontSize="16" TextColor="#7F8C8D" HorizontalOptions="Center" />
-            </VerticalStackLayout>
-        </ScrollView>
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Header & Search -->
+        <VerticalStackLayout Grid.Row="0" Spacing="12" Padding="20,10">
+            <Label Text="Transactions" FontSize="24" FontAttributes="Bold" TextColor="#2C3E50" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <Frame Grid.Column="0" Padding="0" BackgroundColor="White" CornerRadius="12" HasShadow="False">
+                    <Entry x:Name="SearchEntry" Placeholder="Rechercher une transaction..." BackgroundColor="Transparent" TextColor="#2C3E50" HeightRequest="45" TextChanged="OnSearchChanged" />
+                </Frame>
+                <Button Grid.Column="1" Text="＋" FontSize="20" WidthRequest="45" HeightRequest="45" CornerRadius="12" BackgroundColor="#2C3E50" TextColor="White" Clicked="OnAddClicked" />
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- List -->
+        <CollectionView Grid.Row="1" x:Name="TransactionsList" ItemsSource="{Binding}" SelectionMode="None">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame Margin="16,8" Padding="16" CornerRadius="16" HasShadow="True" BackgroundColor="White">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label Grid.Row="0" Grid.Column="0" Text="{Binding Title}" FontSize="18" TextColor="#2C3E50" />
+                            <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="8">
+                                <Button Text="✏️" Padding="6" BackgroundColor="Transparent" Clicked="OnEditClicked" CommandParameter="{Binding .}" />
+                                <Button Text="🗑️" Padding="6" BackgroundColor="Transparent" TextColor="#E74C3C" Clicked="OnDeleteClicked" CommandParameter="{Binding .}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Spacing="12" VerticalOptions="Center">
+                                <Frame Padding="8,4" CornerRadius="10" BackgroundColor="#ECF0F1" HasShadow="False">
+                                    <Label Text="{Binding Category}" FontSize="12" TextColor="#2C3E50" />
+                                </Frame>
+                                <Label Text="{Binding Date, StringFormat='{}{0:dd MMM}'}" FontSize="12" TextColor="#7F8C8D" />
+                                <Label Text="{Binding Amount, StringFormat='{}{0:+0.00;-0.00} €'}" FontSize="16" TextColor="#27AE60" />
+                            </HorizontalStackLayout>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
 
         <!-- Menu Footer avec 4 boutons -->
-        <Frame Grid.Row="1"
+        <Frame Grid.Row="2"
                BackgroundColor="White"
                CornerRadius="0"
                Padding="0"

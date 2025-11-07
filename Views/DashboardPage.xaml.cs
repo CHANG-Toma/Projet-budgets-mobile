@@ -1,3 +1,6 @@
+using Microsoft.Maui.Storage;
+using Projet_Budget_M1.Services;
+
 namespace Projet_Budget_M1.Views
 {
     public partial class DashboardPage : ContentPage
@@ -5,6 +8,26 @@ namespace Projet_Budget_M1.Views
         public DashboardPage()
         {
             InitializeComponent();
+        }
+
+        protected override async void OnAppearing()
+        {
+            base.OnAppearing();
+            var email = Preferences.Default.Get("userEmail", string.Empty);
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                var user = await DbService.GetUserByEmailAsync(email);
+                var display = user?.FullName;
+                if (string.IsNullOrWhiteSpace(display))
+                {
+                    display = email.Contains('@') ? email.Split('@')[0] : email;
+                }
+                GreetingLabel.Text = $"Bonjour {display}";
+            }
+            else
+            {
+                GreetingLabel.Text = "Bonjour";
+            }
         }
 
         private async void OnViewBudgetDetailsTapped(object sender, EventArgs e)
@@ -42,6 +65,11 @@ namespace Projet_Budget_M1.Views
         private async void OnBudgetClicked(object sender, EventArgs e)
         {
             await Shell.Current.GoToAsync("//BudgetPage");
+        }
+
+        private async void OnProfileTapped(object sender, EventArgs e)
+        {
+            await Navigation.PushAsync(new ProfilePage());
         }
     }
 }

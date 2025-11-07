@@ -1,7 +1,10 @@
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Projet_Budget_M1.Commands;
+using Projet_Budget_M1.Services;
 
 namespace Projet_Budget_M1.ViewModels
 {
@@ -69,13 +72,24 @@ namespace Projet_Budget_M1.ViewModels
 
             try
             {
-                // Simulation d'une inscription
-                await Task.Delay(2000);
-                
+                var result = await DbService.RegisterUserAsync(FullName.Trim(), Email.Trim(), Password);
+
+                if (result.EmailExists)
+                {
+                    await Application.Current!.Windows[0].Page!.DisplayAlert("Erreur", result.ErrorMessage ?? "Cette adresse email est déjà utilisée", "OK");
+                    return;
+                }
+
+                if (!result.IsSuccess)
+                {
+                    await Application.Current!.Windows[0].Page!.DisplayAlert("Erreur", result.ErrorMessage ?? "Une erreur s'est produite lors de l'inscription", "OK");
+                    return;
+                }
+
                 await Application.Current!.Windows[0].Page!.DisplayAlert("Succès", $"Inscription réussie pour {FullName} ({Email})", "OK");
-                
-                // Ici vous pourriez naviguer vers la page de connexion ou la page principale
-                // await NavigationService.NavigateToAsync<LoginViewModel>();
+
+                // Naviguer vers la page de connexion après inscription
+                await Application.Current!.Windows[0].Page!.Navigation.PushAsync(new Views.LoginPage());
             }
             catch (Exception ex)
             {

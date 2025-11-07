@@ -1,3 +1,7 @@
+using System;
+using System.Threading.Tasks;
+using Projet_Budget_M1.Services;
+
 namespace Projet_Budget_M1.Views
 {
     public partial class RegisterPage : ContentPage
@@ -9,14 +13,13 @@ namespace Projet_Budget_M1.Views
 
         private async void OnRegisterClicked(object sender, EventArgs e)
         {
-            var fullName = FullNameEntry.Text;
-            var email = EmailEntry.Text;
-            var password = PasswordEntry.Text;
+            var fullName = FullNameEntry.Text?.Trim() ?? string.Empty;
+            var email = EmailEntry.Text?.Trim() ?? string.Empty;
+            var password = PasswordEntry.Text ?? string.Empty;
 
-            // Validation basique - seulement nom et email requis
-            if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email))
+            if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
-                await DisplayAlert("Erreur", "Veuillez remplir le nom et l'email", "OK");
+                await DisplayAlert("Erreur", "Veuillez remplir tous les champs", "OK");
                 return;
             }
 
@@ -26,13 +29,31 @@ namespace Projet_Budget_M1.Views
                 return;
             }
 
-            // Simulation de l'inscription
+            if (password.Length < 6)
+            {
+                await DisplayAlert("Erreur", "Le mot de passe doit contenir au moins 6 caractères", "OK");
+                return;
+            }
+
             try
             {
-                await Task.Delay(1000); // Simule un appel API - 1s
+                var result = await DbService.RegisterUserAsync(fullName, email, password);
+
+                if (result.EmailExists)
+                {
+                    await DisplayAlert("Erreur", result.ErrorMessage ?? "Cette adresse email est déjà utilisée", "OK");
+                    return;
+                }
+
+                if (!result.IsSuccess)
+                {
+                    await DisplayAlert("Erreur", result.ErrorMessage ?? "Une erreur s'est produite lors de l'inscription", "OK");
+                    return;
+                }
+
                 await DisplayAlert("Succès", $"Inscription réussie pour {fullName} ({email})", "OK");
-                
-                // Navigation vers le dashboard après inscription réussie
+
+                // Naviguer vers la page d'accueil après inscription réussie
                 Application.Current!.Windows[0].Page = new AppShell();
             }
             catch (Exception ex)

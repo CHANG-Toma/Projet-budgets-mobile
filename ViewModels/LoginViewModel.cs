@@ -1,7 +1,10 @@
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Projet_Budget_M1.Commands;
+using Projet_Budget_M1.Services;
 
 namespace Projet_Budget_M1.ViewModels
 {
@@ -56,13 +59,17 @@ namespace Projet_Budget_M1.ViewModels
 
             try
             {
-                // Simulation d'une connexion
-                await Task.Delay(2000);
-                
-                await Application.Current!.Windows[0].Page!.DisplayAlert("Succès", $"Connexion réussie pour {Email}", "OK");
-                
-                // Ici vous pourriez naviguer vers la page principale
-                // await NavigationService.NavigateToAsync<MainPageViewModel>();
+                var user = await DbService.ValidateCredentialsAsync(Email.Trim(), Password);
+
+                if (user is null)
+                {
+                    await Application.Current!.Windows[0].Page!.DisplayAlert("Erreur", "Identifiants invalides", "OK");
+                    return;
+                }
+
+                await Application.Current!.Windows[0].Page!.DisplayAlert("Succès", $"Connexion réussie pour {user.FullName ?? user.Email}", "OK");
+
+                // TODO: naviguer vers la page principale ou charger les données utilisateur.
             }
             catch (Exception ex)
             {
@@ -76,7 +83,7 @@ namespace Projet_Budget_M1.ViewModels
 
         private async Task ExecuteSignUpAsync()
         {
-            await Application.Current!.Windows[0].Page!.DisplayAlert("Inscription", "Fonctionnalité d'inscription à venir", "OK");
+            await Application.Current!.Windows[0].Page!.Navigation.PushAsync(new Views.RegisterPage());
         }
 
         private bool CanExecuteLogin()

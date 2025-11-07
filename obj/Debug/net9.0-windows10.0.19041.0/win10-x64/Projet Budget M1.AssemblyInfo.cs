@@ -17,7 +17,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Projet Budget M1")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+a92d2951efec3cb5202ca8ed9f3a67911a7badb5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+dbd9720ae4e8c0547ed5cd8aa348cb0e5c01fe4f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Projet Budget M1")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Projet Budget M1")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

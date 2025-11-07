@@ -26,6 +26,13 @@ namespace Projet_Budget_M1.ViewModels
         private string _selectedCategory = "Alimentation";
         private string _categoryIcon = "🍽️";
 
+        // Propriétés des filtres
+        private bool _isFilterPanelVisible = false;
+        private string _filterCategory = "Toutes";
+        private DateTime? _filterDateStart = null;
+        private DateTime? _filterDateEnd = null;
+        private List<Transaction> _allTransactions = new();
+
         public ObservableCollection<Transaction> Transactions { get; } = new();
 
         public string SearchText
@@ -35,7 +42,7 @@ namespace Projet_Budget_M1.ViewModels
             {
                 if (SetProperty(ref _searchText, value))
                 {
-                    _ = LoadAsync(value);
+                    ApplyFilters();
                 }
             }
         }
@@ -95,6 +102,74 @@ namespace Projet_Budget_M1.ViewModels
         }
 
         public string[] Categories { get; } = { "Alimentation", "Transport", "Logement", "Santé", "Loisirs", "Autres" };
+        public string[] FilterCategories { get; } = { "Toutes", "Alimentation", "Transport", "Logement", "Santé", "Loisirs", "Autres" };
+
+        // Propriétés des filtres
+        public bool IsFilterPanelVisible
+        {
+            get => _isFilterPanelVisible;
+            set => SetProperty(ref _isFilterPanelVisible, value);
+        }
+
+        public string FilterCategory
+        {
+            get => _filterCategory;
+            set
+            {
+                if (SetProperty(ref _filterCategory, value))
+                {
+                    ApplyFilters();
+                }
+            }
+        }
+
+        public DateTime? FilterDateStart
+        {
+            get => _filterDateStart;
+            set
+            {
+                if (SetProperty(ref _filterDateStart, value))
+                {
+                    OnPropertyChanged(nameof(FilterDateStartValue));
+                    ApplyFilters();
+                }
+            }
+        }
+
+        public DateTime FilterDateStartValue
+        {
+            get => _filterDateStart ?? DateTime.Today;
+            set
+            {
+                // Toujours mettre à jour la valeur, même si c'est la date par défaut
+                // L'utilisateur peut utiliser le bouton "Réinitialiser" pour effacer
+                FilterDateStart = value;
+            }
+        }
+
+        public DateTime? FilterDateEnd
+        {
+            get => _filterDateEnd;
+            set
+            {
+                if (SetProperty(ref _filterDateEnd, value))
+                {
+                    OnPropertyChanged(nameof(FilterDateEndValue));
+                    ApplyFilters();
+                }
+            }
+        }
+
+        public DateTime FilterDateEndValue
+        {
+            get => _filterDateEnd ?? DateTime.Today;
+            set
+            {
+                // Toujours mettre à jour la valeur, même si c'est la date par défaut
+                // L'utilisateur peut utiliser le bouton "Réinitialiser" pour effacer
+                FilterDateEnd = value;
+            }
+        }
 
         // Commands
         public ICommand LoadDataCommand { get; }
@@ -106,6 +181,8 @@ namespace Projet_Budget_M1.ViewModels
         public ICommand NavigateHomeCommand { get; }
         public ICommand NavigateStatisticsCommand { get; }
         public ICommand NavigateBudgetCommand { get; }
+        public ICommand ToggleFilterPanelCommand { get; }
+        public ICommand ResetFiltersCommand { get; }
 
         public TransactionsViewModel()
         {
@@ -120,6 +197,8 @@ namespace Projet_Budget_M1.ViewModels
             NavigateHomeCommand = new RelayCommand(async () => await Shell.Current.GoToAsync("//DashboardPage"));
             NavigateStatisticsCommand = new RelayCommand(async () => await Shell.Current.GoToAsync("//StatisticsPage"));
             NavigateBudgetCommand = new RelayCommand(async () => await Shell.Current.GoToAsync("//BudgetPage"));
+            ToggleFilterPanelCommand = new RelayCommand(() => IsFilterPanelVisible = !IsFilterPanelVisible);
+            ResetFiltersCommand = new RelayCommand(ResetFilters);
         }
 
         public async Task LoadAsync(string? search = null)
@@ -135,11 +214,8 @@ namespace Projet_Budget_M1.ViewModels
             try
             {
                 var data = await DbService.GetTransactionsAsync(_currentUserEmail, search);
-                Transactions.Clear();
-                foreach (var t in data)
-                {
-                    Transactions.Add(t);
-                }
+                _allTransactions = data;
+                ApplyFilters();
             }
             catch (Exception ex)
             {
@@ -149,6 +225,50 @@ namespace Projet_Budget_M1.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        private void ApplyFilters()
+        {
+            var filtered = _allTransactions.AsEnumerable();
+
+            // Filtre par texte de recherche
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                filtered = filtered.Where(t => 
+                    t.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Filtre par catégorie
+            if (!string.IsNullOrWhiteSpace(FilterCategory) && FilterCategory != "Toutes")
+            {
+                filtered = filtered.Where(t => t.Category == FilterCategory);
+            }
+
+            // Filtre par date de début
+            if (FilterDateStart.HasValue)
+            {
+                filtered = filtered.Where(t => t.Date >= FilterDateStart.Value.Date);
+            }
+
+            // Filtre par date de fin
+            if (FilterDateEnd.HasValue)
+            {
+                filtered = filtered.Where(t => t.Date <= FilterDateEnd.Value.Date.AddDays(1).AddTicks(-1));
+            }
+
+            Transactions.Clear();
+            foreach (var t in filtered.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id))
+            {
+                Transactions.Add(t);
+            }
+        }
+
+        private void ResetFilters()
+        {
+            FilterCategory = "Toutes";
+            FilterDateStart = null;
+            FilterDateEnd = null;
+            ApplyFilters();
         }
 
         private void OpenAddForm()
@@ -213,7 +333,7 @@ namespace Projet_Budget_M1.ViewModels
             try
             {
                 await DbService.DeleteTransactionAsync(transaction.Id, _currentUserEmail);
-                await LoadAsync(SearchText);
+                await LoadAsync();
             }
             catch (Exception ex)
             {
@@ -266,7 +386,7 @@ namespace Projet_Budget_M1.ViewModels
                 await Application.Current!.MainPage!.DisplayAlert("Succès", "Transaction enregistrée", "OK");
 
                 CloseOverlay();
-                await LoadAsync(SearchText);
+                await LoadAsync();
             }
             catch (Exception ex)
             {

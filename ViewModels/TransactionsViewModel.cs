@@ -27,6 +27,10 @@ namespace Projet_Budget_M1.ViewModels
         private DateTime _date = DateTime.Now;
         private string _selectedCategory = "Alimentation";
         private string _categoryIcon = "🍽️";
+        private BudgetMensuel? _selectedBudget = null;
+        private ObservableCollection<BudgetMensuel> _availableBudgets = new();
+        private bool _createNewBudget = false;
+        private string _newBudgetLimit = string.Empty;
 
         // Propriétés des filtres
         private bool _isFilterPanelVisible = false;
@@ -102,6 +106,30 @@ namespace Projet_Budget_M1.ViewModels
         {
             get => _categoryIcon;
             set => SetProperty(ref _categoryIcon, value);
+        }
+
+        public ObservableCollection<BudgetMensuel> AvailableBudgets
+        {
+            get => _availableBudgets;
+            set => SetProperty(ref _availableBudgets, value);
+        }
+
+        public BudgetMensuel? SelectedBudget
+        {
+            get => _selectedBudget;
+            set => SetProperty(ref _selectedBudget, value);
+        }
+
+        public bool CreateNewBudget
+        {
+            get => _createNewBudget;
+            set => SetProperty(ref _createNewBudget, value);
+        }
+
+        public string NewBudgetLimit
+        {
+            get => _newBudgetLimit;
+            set => SetProperty(ref _newBudgetLimit, value);
         }
 
         public string[] Categories { get; } = { "Alimentation", "Transport", "Logement", "Santé", "Loisirs", "Autres" };
@@ -229,19 +257,39 @@ namespace Projet_Budget_M1.ViewModels
             {
                 _currentUserEmail = Preferences.Default.Get("userEmail", string.Empty);
                 if (string.IsNullOrWhiteSpace(_currentUserEmail))
+                {
+                    _allTransactions = new List<Transaction>();
+                    TransactionGroups.Clear();
                     return;
+                }
             }
 
             IsLoading = true;
             try
             {
                 var data = await DbService.GetTransactionsAsync(_currentUserEmail, search);
-                _allTransactions = data;
+                _allTransactions = data ?? new List<Transaction>();
                 ApplyFilters();
             }
             catch (Exception ex)
             {
-                await Application.Current!.MainPage!.DisplayAlert("Erreur", $"Erreur lors du chargement: {ex.Message}", "OK");
+                _allTransactions = new List<Transaction>();
+                TransactionGroups.Clear();
+                
+                System.Diagnostics.Debug.WriteLine($"Erreur dans LoadAsync: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                
+                try
+                {
+                    if (Application.Current?.MainPage != null)
+                    {
+                        await Application.Current.MainPage.DisplayAlert("Erreur", $"Erreur lors du chargement: {ex.Message}", "OK");
+                    }
+                }
+                catch
+                {
+                    // Si on ne peut pas afficher l'alerte, on ignore
+                }
             }
             finally
             {
@@ -251,103 +299,166 @@ namespace Projet_Budget_M1.ViewModels
 
         private void ApplyFilters()
         {
-            var filtered = _allTransactions.AsEnumerable();
-
-            // Filtre par texte de recherche
-            if (!string.IsNullOrWhiteSpace(SearchText))
+            try
             {
-                filtered = filtered.Where(t => 
-                    t.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
-            }
+                if (_allTransactions == null)
+                {
+                    _allTransactions = new List<Transaction>();
+                }
 
-            // Filtre par catégorie
-            if (!string.IsNullOrWhiteSpace(FilterCategory) && FilterCategory != "Toutes")
+                var filtered = _allTransactions.AsEnumerable();
+
+                // Filtre par texte de recherche
+                if (!string.IsNullOrWhiteSpace(SearchText))
+                {
+                    filtered = filtered.Where(t => 
+                        t != null && !string.IsNullOrEmpty(t.Title) &&
+                        t.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Filtre par catégorie
+                if (!string.IsNullOrWhiteSpace(FilterCategory) && FilterCategory != "Toutes")
+                {
+                    filtered = filtered.Where(t => t != null && t.Category == FilterCategory);
+                }
+
+                // Filtre par date de début
+                if (FilterDateStart.HasValue)
+                {
+                    filtered = filtered.Where(t => t != null && t.Date >= FilterDateStart.Value.Date);
+                }
+
+                // Filtre par date de fin
+                if (FilterDateEnd.HasValue)
+                {
+                    filtered = filtered.Where(t => t != null && t.Date <= FilterDateEnd.Value.Date.AddDays(1).AddTicks(-1));
+                }
+
+                // Trier les transactions
+                var sorted = SortAscending
+                    ? filtered.Where(t => t != null).OrderBy(t => t.Date).ThenBy(t => t.Id)
+                    : filtered.Where(t => t != null).OrderByDescending(t => t.Date).ThenByDescending(t => t.Id);
+
+                // Grouper par date
+                GroupTransactions(sorted.ToList());
+            }
+            catch (Exception ex)
             {
-                filtered = filtered.Where(t => t.Category == FilterCategory);
+                // En cas d'erreur, on vide les groupes et on log l'erreur
+                TransactionGroups.Clear();
+                System.Diagnostics.Debug.WriteLine($"Erreur dans ApplyFilters: {ex.Message}");
             }
-
-            // Filtre par date de début
-            if (FilterDateStart.HasValue)
-            {
-                filtered = filtered.Where(t => t.Date >= FilterDateStart.Value.Date);
-            }
-
-            // Filtre par date de fin
-            if (FilterDateEnd.HasValue)
-            {
-                filtered = filtered.Where(t => t.Date <= FilterDateEnd.Value.Date.AddDays(1).AddTicks(-1));
-            }
-
-            // Trier les transactions
-            var sorted = SortAscending
-                ? filtered.OrderBy(t => t.Date).ThenBy(t => t.Id)
-                : filtered.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id);
-
-            // Grouper par date
-            GroupTransactions(sorted.ToList());
         }
 
         private void GroupTransactions(List<Transaction> transactions)
         {
-            TransactionGroups.Clear();
-
-            if (transactions.Count == 0)
-                return;
-
-            var today = DateTime.Today;
-            var thisWeekStart = today.AddDays(-(int)today.DayOfWeek);
-            var thisMonthStart = new DateTime(today.Year, today.Month, 1);
-            var lastMonthStart = thisMonthStart.AddMonths(-1);
-
-            var grouped = transactions.GroupBy(t =>
+            try
             {
-                var date = t.Date.Date;
-                
-                if (date == today)
-                    return "Aujourd'hui";
-                else if (date >= thisWeekStart && date < today)
-                    return "Cette semaine";
-                else if (date >= thisMonthStart && date < thisWeekStart)
-                    return "Ce mois";
-                else if (date >= lastMonthStart && date < thisMonthStart)
-                    return "Mois dernier";
-                else if (date.Year == today.Year)
-                    return date.ToString("MMMM yyyy", new System.Globalization.CultureInfo("fr-FR"));
-                else
-                    return date.ToString("yyyy");
-            });
+                TransactionGroups.Clear();
 
-            // Trier les groupes selon l'ordre de tri
-            var orderedGroups = SortAscending
-                ? grouped.OrderBy(g =>
+                if (transactions == null || transactions.Count == 0)
+                    return;
+
+                var today = DateTime.Today;
+                var thisWeekStart = today.AddDays(-(int)today.DayOfWeek);
+                var thisMonthStart = new DateTime(today.Year, today.Month, 1);
+                var lastMonthStart = thisMonthStart.AddMonths(-1);
+
+                // Filtrer les transactions null avant de grouper
+                var validTransactions = transactions.Where(t => t != null).ToList();
+                if (validTransactions.Count == 0)
+                    return;
+
+                var grouped = validTransactions.GroupBy(t =>
                 {
-                    var groupName = g.Key;
-                    if (groupName == "Aujourd'hui") return 1;
-                    if (groupName == "Cette semaine") return 2;
-                    if (groupName == "Ce mois") return 3;
-                    if (groupName == "Mois dernier") return 4;
-                    var firstDate = g.First().Date;
-                    return (int)(firstDate - DateTime.MinValue).TotalDays;
-                })
-                : grouped.OrderByDescending(g =>
-                {
-                    var groupName = g.Key;
-                    if (groupName == "Aujourd'hui") return int.MaxValue;
-                    if (groupName == "Cette semaine") return int.MaxValue - 1;
-                    if (groupName == "Ce mois") return int.MaxValue - 2;
-                    if (groupName == "Mois dernier") return int.MaxValue - 3;
-                    var firstDate = g.First().Date;
-                    return (int)(firstDate - DateTime.MinValue).TotalDays;
+                    try
+                    {
+                        var date = t.Date.Date;
+                        
+                        if (date == today)
+                            return "Aujourd'hui";
+                        else if (date >= thisWeekStart && date < today)
+                            return "Cette semaine";
+                        else if (date >= thisMonthStart && date < thisWeekStart)
+                            return "Ce mois";
+                        else if (date >= lastMonthStart && date < thisMonthStart)
+                            return "Mois dernier";
+                        else if (date.Year == today.Year)
+                            return date.ToString("MMMM yyyy", new System.Globalization.CultureInfo("fr-FR"));
+                        else
+                            return date.ToString("yyyy");
+                    }
+                    catch
+                    {
+                        return "Autres";
+                    }
                 });
 
-            foreach (var group in orderedGroups)
-            {
-                var transactionGroup = new TransactionGroup(group.Key, group.First().Date);
-                foreach (var transaction in group)
+                // Trier les groupes selon l'ordre de tri
+                var orderedGroups = SortAscending
+                    ? grouped.OrderBy(g =>
+                    {
+                        try
+                        {
+                            var groupName = g.Key;
+                            if (groupName == "Aujourd'hui") return 1;
+                            if (groupName == "Cette semaine") return 2;
+                            if (groupName == "Ce mois") return 3;
+                            if (groupName == "Mois dernier") return 4;
+                            var firstTransaction = g.FirstOrDefault();
+                            if (firstTransaction == null) return int.MaxValue;
+                            var firstDate = firstTransaction.Date;
+                            return (int)(firstDate - DateTime.MinValue).TotalDays;
+                        }
+                        catch
+                        {
+                            return int.MaxValue;
+                        }
+                    })
+                    : grouped.OrderByDescending(g =>
+                    {
+                        try
+                        {
+                            var groupName = g.Key;
+                            if (groupName == "Aujourd'hui") return int.MaxValue;
+                            if (groupName == "Cette semaine") return int.MaxValue - 1;
+                            if (groupName == "Ce mois") return int.MaxValue - 2;
+                            if (groupName == "Mois dernier") return int.MaxValue - 3;
+                            var firstTransaction = g.FirstOrDefault();
+                            if (firstTransaction == null) return 0;
+                            var firstDate = firstTransaction.Date;
+                            return (int)(firstDate - DateTime.MinValue).TotalDays;
+                        }
+                        catch
+                        {
+                            return 0;
+                        }
+                    });
+
+                foreach (var group in orderedGroups)
                 {
-                    transactionGroup.Add(transaction);
+                    try
+                    {
+                        var firstTransaction = group.FirstOrDefault();
+                        if (firstTransaction == null) continue;
+
+                        var transactionGroup = new TransactionGroup(group.Key, firstTransaction.Date);
+                        foreach (var transaction in group.Where(t => t != null))
+                        {
+                            transactionGroup.Add(transaction);
+                        }
+                        TransactionGroups.Add(transactionGroup);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Erreur lors de l'ajout d'un groupe: {ex.Message}");
+                    }
                 }
-                TransactionGroups.Add(transactionGroup);
+            }
+            catch (Exception ex)
+            {
+                TransactionGroups.Clear();
+                System.Diagnostics.Debug.WriteLine($"Erreur dans GroupTransactions: {ex.Message}");
             }
         }
 
@@ -443,7 +554,7 @@ namespace Projet_Budget_M1.ViewModels
             }
         }
 
-        private void OpenAddForm()
+        private async void OpenAddForm()
         {
             if (string.IsNullOrWhiteSpace(_currentUserEmail))
             {
@@ -454,10 +565,44 @@ namespace Projet_Budget_M1.ViewModels
             _currentTransaction = null;
             FormTitle = "Nouvelle transaction";
             ResetForm();
+            
+            // Charger les budgets disponibles
+            try
+            {
+                var budgets = await DbService.GetBudgetsAsync(_currentUserEmail);
+                AvailableBudgets.Clear();
+                foreach (var budget in budgets)
+                {
+                    AvailableBudgets.Add(budget);
+                }
+                
+                // Sélectionner le budget du mois en cours par défaut
+                var currentMonth = new DateTime(Date.Year, Date.Month, 1);
+                SelectedBudget = AvailableBudgets.FirstOrDefault(b => b.Mois == currentMonth);
+                
+                // Si aucun budget n'existe pour ce mois, proposer de créer un nouveau budget
+                if (SelectedBudget == null)
+                {
+                    CreateNewBudget = true;
+                    SelectedBudget = null; // S'assurer qu'aucun budget n'est sélectionné
+                }
+                else
+                {
+                    CreateNewBudget = false; // Un budget existe, ne pas créer de nouveau
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur lors du chargement des budgets: {ex.Message}");
+                // En cas d'erreur, proposer de créer un nouveau budget
+                CreateNewBudget = true;
+                SelectedBudget = null;
+            }
+            
             IsOverlayVisible = true;
         }
 
-        private void EditTransaction(Transaction? transaction)
+        private async void EditTransaction(Transaction? transaction)
         {
             if (transaction == null) return;
 
@@ -470,6 +615,27 @@ namespace Projet_Budget_M1.ViewModels
             _currentTransaction = transaction;
             FormTitle = "Modifier transaction";
             LoadTransactionIntoForm(transaction);
+            
+            // Charger les budgets disponibles
+            try
+            {
+                var budgets = await DbService.GetBudgetsAsync(_currentUserEmail);
+                AvailableBudgets.Clear();
+                foreach (var budget in budgets)
+                {
+                    AvailableBudgets.Add(budget);
+                }
+                
+                // Sélectionner le budget du mois de la transaction
+                var transactionMonth = new DateTime(transaction.Date.Year, transaction.Date.Month, 1);
+                SelectedBudget = AvailableBudgets.FirstOrDefault(b => b.Mois == transactionMonth);
+                CreateNewBudget = false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur lors du chargement des budgets: {ex.Message}");
+            }
+            
             IsOverlayVisible = true;
         }
 
@@ -531,6 +697,28 @@ namespace Projet_Budget_M1.ViewModels
 
             try
             {
+                // Gérer le budget - s'assurer qu'un budget est toujours disponible
+                int? budgetId = null;
+                
+                if (CreateNewBudget)
+                {
+                    // Créer un nouveau budget
+                    decimal? limite = null;
+                    if (!string.IsNullOrWhiteSpace(NewBudgetLimit) && 
+                        decimal.TryParse(NewBudgetLimit.Replace(",", "."), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out decimal limitValue))
+                    {
+                        limite = limitValue;
+                    }
+                    
+                    budgetId = await DbService.CreateBudgetAsync(_currentUserEmail, Date, limite);
+                }
+                else if (SelectedBudget != null)
+                {
+                    // Utiliser le budget sélectionné
+                    budgetId = SelectedBudget.IdBudget;
+                }
+                // Si budgetId est null, AddOrUpdateTransactionAsync créera automatiquement un budget
+
                 Transaction transaction;
                 if (_currentTransaction != null && _currentTransaction.Id > 0)
                 {
@@ -552,7 +740,7 @@ namespace Projet_Budget_M1.ViewModels
                 transaction.Category = SelectedCategory;
                 transaction.OwnerEmail = _currentUserEmail;
 
-                var id = await DbService.AddOrUpdateTransactionAsync(transaction);
+                var id = await DbService.AddOrUpdateTransactionAsync(transaction, budgetId);
                 transaction.Id = id;
 
                 await Application.Current!.MainPage!.DisplayAlert("Succès", "Transaction enregistrée", "OK");
@@ -580,6 +768,9 @@ namespace Projet_Budget_M1.ViewModels
             Date = DateTime.Now;
             SelectedCategory = Categories[0];
             CategoryIcon = GetCategoryIcon(Categories[0]);
+            SelectedBudget = null;
+            CreateNewBudget = false;
+            NewBudgetLimit = string.Empty;
         }
 
         private string GetCategoryIcon(string category)

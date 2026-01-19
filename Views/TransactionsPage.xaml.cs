@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Maui.Controls;
 using Projet_Budget_M1.ViewModels;
 
@@ -17,7 +18,19 @@ namespace Projet_Budget_M1.Views
         protected override async void OnAppearing()
         {
             base.OnAppearing();
-            await _viewModel.LoadAsync();
+            try
+            {
+                if (_viewModel != null)
+                {
+                    await _viewModel.LoadAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log l'erreur pour le débogage
+                System.Diagnostics.Debug.WriteLine($"Erreur dans OnAppearing: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
         }
 
         private void OnOverlayTapped(object sender, EventArgs e)

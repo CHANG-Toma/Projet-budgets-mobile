@@ -7,6 +7,7 @@
              BackgroundColor="#F5F5F5">
     <ContentPage.Resources>
         <local:AmountToColorConverter x:Key="AmountToColorConverter" />
+        <local:InvertedBoolConverter x:Key="InvertedBoolConverter" />
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*,Auto">
@@ -474,6 +475,85 @@
                                                    FontSize="18"
                                                    VerticalOptions="Center"
                                                    HorizontalOptions="End" />
+                                        </Grid>
+                                    </Frame>
+                                </VerticalStackLayout>
+
+                                <!-- Champ Budget -->
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="Budget mensuel"
+                                           FontSize="14"
+                                           FontAttributes="Bold"
+                                           TextColor="#2C3E50" />
+                                    
+                                    <!-- Option: Créer un nouveau budget -->
+                                    <Frame BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding CreateNewBudget, Mode=TwoWay}"
+                                                      VerticalOptions="Center"
+                                                      Margin="0,0,10,0" />
+                                            <Label Grid.Column="1"
+                                                   Text="Créer un nouveau budget"
+                                                   FontSize="14"
+                                                   TextColor="#2C3E50"
+                                                   VerticalOptions="Center" />
+                                        </Grid>
+                                    </Frame>
+                                    
+                                    <!-- Sélecteur de budget existant (si pas de nouveau budget) -->
+                                    <Frame IsVisible="{Binding CreateNewBudget, Converter={StaticResource InvertedBoolConverter}}"
+                                           BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Label Grid.Column="0"
+                                                   Text="💰"
+                                                   FontSize="16"
+                                                   VerticalOptions="Center"
+                                                   Margin="0,0,10,0" />
+                                            <Picker Grid.Column="1"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="#2C3E50"
+                                                    Title="Sélectionner un budget"
+                                                    FontSize="16"
+                                                    ItemsSource="{Binding AvailableBudgets}"
+                                                    SelectedItem="{Binding SelectedBudget, Mode=TwoWay}"
+                                                    ItemDisplayBinding="{Binding DisplayText}" />
+                                        </Grid>
+                                    </Frame>
+                                    
+                                    <!-- Champ limite pour nouveau budget (si création) -->
+                                    <Frame IsVisible="{Binding CreateNewBudget}"
+                                           BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent"
+                                           Margin="0,5,0,0">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Label Grid.Column="0"
+                                                   Text="💵"
+                                                   FontSize="16"
+                                                   VerticalOptions="Center"
+                                                   Margin="0,0,10,0" />
+                                            <Entry Grid.Column="1"
+                                                   Placeholder="Limite du budget (optionnel)"
+                                                   BackgroundColor="Transparent"
+                                                   TextColor="#2C3E50"
+                                                   PlaceholderColor="#95A5A6"
+                                                   FontSize="16"
+                                                   Keyboard="Numeric"
+                                                   Text="{Binding NewBudgetLimit, Mode=TwoWay}" />
                                         </Grid>
                                     </Frame>
                                 </VerticalStackLayout>

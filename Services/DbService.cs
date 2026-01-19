@@ -153,7 +153,7 @@ public static class DbService
         return rows > 0;
     }
 
-    public static async Task<int> AddOrUpdateTransactionAsync(Transaction tx)
+    public static async Task<int> AddOrUpdateTransactionAsync(Transaction tx, int? budgetId = null)
     {
         await using var connection = await OpenConnectionAsync();
         
@@ -161,9 +161,8 @@ public static class DbService
         var user = await GetUserByEmailAsync(tx.OwnerEmail);
         if (user == null) throw new Exception("Utilisateur introuvable");
         
-        // Valeurs par défaut pour id_moyen (1 = Espèces par défaut) et id_budget (générique)
+        // Valeurs par défaut pour id_moyen (1 = Espèces par défaut)
         int idMoyen = 1;
-        string idBudget = $"BUDGET_{DateTime.Now:yyyyMM}"; // Budget mensuel auto
         
         // Créer ou récupérer le moyen de paiement par défaut
         await using var cmdMoyen = connection.CreateCommand();
@@ -171,13 +170,47 @@ public static class DbService
         cmdMoyen.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
         await cmdMoyen.ExecuteNonQueryAsync();
         
-        // Créer ou récupérer le budget mensuel
-        await using var cmdBudget = connection.CreateCommand();
-        cmdBudget.CommandText = "INSERT IGNORE INTO budgetmensuel (id_budget, mois, limite, id_utilisateur) VALUES (@id_budget, @mois, NULL, @id_utilisateur)";
-        cmdBudget.Parameters.AddWithValue("@id_budget", idBudget);
-        cmdBudget.Parameters.AddWithValue("@mois", new DateTime(tx.Date.Year, tx.Date.Month, 1));
-        cmdBudget.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
-        await cmdBudget.ExecuteNonQueryAsync();
+        // Gérer le budget
+        int idBudget;
+        if (budgetId.HasValue)
+        {
+            // Utiliser le budget fourni
+            idBudget = budgetId.Value;
+        }
+        else
+        {
+            // Calculer le mois de la transaction (premier jour du mois)
+            var moisBudget = new DateTime(tx.Date.Year, tx.Date.Month, 1);
+            
+            // Vérifier si un budget existe déjà pour ce mois et cet utilisateur
+            await using var cmdCheckBudget = connection.CreateCommand();
+            cmdCheckBudget.CommandText = "SELECT id_budget FROM budgetmensuel WHERE mois = @mois AND id_utilisateur = @id_utilisateur LIMIT 1";
+            cmdCheckBudget.Parameters.AddWithValue("@mois", moisBudget);
+            cmdCheckBudget.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+            
+            var existingBudgetId = await cmdCheckBudget.ExecuteScalarAsync();
+            
+            if (existingBudgetId != null && existingBudgetId != DBNull.Value)
+            {
+                // Budget existe déjà, utiliser son ID
+                idBudget = Convert.ToInt32(existingBudgetId);
+            }
+            else
+            {
+                // Créer un nouveau budget mensuel (laisser MySQL générer l'ID automatiquement)
+                await using var cmdBudget = connection.CreateCommand();
+                cmdBudget.CommandText = "INSERT INTO budgetmensuel (mois, limite, id_utilisateur) VALUES (@mois, NULL, @id_utilisateur); SELECT LAST_INSERT_ID();";
+                cmdBudget.Parameters.AddWithValue("@mois", moisBudget);
+                cmdBudget.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+                
+                var newBudgetId = await cmdBudget.ExecuteScalarAsync();
+                if (newBudgetId == null || newBudgetId == DBNull.Value)
+                {
+                    throw new Exception("Erreur lors de la création du budget mensuel");
+                }
+                idBudget = Convert.ToInt32(newBudgetId);
+            }
+        }
         
         await using var cmd = connection.CreateCommand();
         if (tx.Id == 0)
@@ -190,7 +223,7 @@ public static class DbService
         else
         {
             cmd.CommandText = @"UPDATE depense 
-                                SET date_depense=@date_depense, montant=@montant, description=@description 
+                                SET date_depense=@date_depense, montant=@montant, description=@description, id_budget=@id_budget
                                 WHERE id_depense=@id AND id_utilisateur=@id_utilisateur; 
                                 SELECT @id;";
             cmd.Parameters.AddWithValue("@id", tx.Id);
@@ -215,6 +248,11 @@ public static class DbService
             }
             
             return id;
+        }
+        catch (MySqlException ex) when (ex.Number == 1452)
+        {
+            // Erreur de clé étrangère
+            throw new Exception($"Erreur de contrainte de clé étrangère: {ex.Message}");
         }
         catch (MySqlException ex) when (ex.Number == 1062)
         {
@@ -241,50 +279,105 @@ public static class DbService
     public static async Task<List<Transaction>> GetTransactionsAsync(string ownerEmail, string? search = null)
     {
         var list = new List<Transaction>();
-        await using var connection = await OpenConnectionAsync();
         
-        // Récupérer l'ID utilisateur à partir de l'email
-        var user = await GetUserByEmailAsync(ownerEmail);
-        if (user == null) return list;
-        
-        await using var cmd = connection.CreateCommand();
-        if (string.IsNullOrWhiteSpace(search))
+        try
         {
-            cmd.CommandText = @"SELECT d.id_depense, d.description, d.montant, d.date_depense, d.id_utilisateur
-                                FROM depense d
-                                WHERE d.id_utilisateur=@id_utilisateur 
-                                ORDER BY d.date_depense DESC, d.id_depense DESC";
-        }
-        else
-        {
-            cmd.CommandText = @"SELECT d.id_depense, d.description, d.montant, d.date_depense, d.id_utilisateur
-                                FROM depense d
-                                WHERE d.id_utilisateur=@id_utilisateur 
-                                AND d.description LIKE @q 
-                                ORDER BY d.date_depense DESC, d.id_depense DESC";
-            cmd.Parameters.AddWithValue("@q", $"%{search}%");
-        }
-        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
-
-        await using var reader = await cmd.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            var description = reader.IsDBNull(1) ? "" : reader.GetString(1);
-            var parts = description.Split(" - ", 2);
-            var title = parts.Length > 0 ? parts[0] : description;
-            var category = parts.Length > 1 ? parts[1] : "Général";
-            
-            list.Add(new Transaction
+            if (string.IsNullOrWhiteSpace(ownerEmail))
             {
-                Id = reader.GetInt32(0),
-                Title = title,
-                Amount = reader.GetDouble(2),
-                Date = reader.GetDateTime(3),
-                Category = category,
-                OwnerEmail = ownerEmail,
-                IdUtilisateur = reader.GetInt32(4)
-            });
+                return list;
+            }
+
+            await using var connection = await OpenConnectionAsync();
+            
+            // Récupérer l'ID utilisateur à partir de l'email
+            var user = await GetUserByEmailAsync(ownerEmail);
+            if (user == null) return list;
+            
+            await using var cmd = connection.CreateCommand();
+            if (string.IsNullOrWhiteSpace(search))
+            {
+                cmd.CommandText = @"SELECT d.id_depense, d.description, d.montant, d.date_depense, d.id_utilisateur
+                                    FROM depense d
+                                    WHERE d.id_utilisateur=@id_utilisateur 
+                                    ORDER BY d.date_depense DESC, d.id_depense DESC";
+            }
+            else
+            {
+                cmd.CommandText = @"SELECT d.id_depense, d.description, d.montant, d.date_depense, d.id_utilisateur
+                                    FROM depense d
+                                    WHERE d.id_utilisateur=@id_utilisateur 
+                                    AND d.description LIKE @q 
+                                    ORDER BY d.date_depense DESC, d.id_depense DESC";
+                cmd.Parameters.AddWithValue("@q", $"%{search}%");
+            }
+            cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                try
+                {
+                    // Vérifier que toutes les colonnes nécessaires sont présentes et non null
+                    if (reader.IsDBNull(0) || reader.IsDBNull(2) || reader.IsDBNull(3) || reader.IsDBNull(4))
+                    {
+                        System.Diagnostics.Debug.WriteLine("Transaction ignorée: données manquantes");
+                        continue;
+                    }
+
+                    var id = reader.GetInt32(0);
+                    var description = reader.IsDBNull(1) ? "" : reader.GetString(1);
+                    var amount = reader.GetDouble(2);
+                    var date = reader.GetDateTime(3);
+                    var idUtilisateur = reader.GetInt32(4);
+                    
+                    // Parser la description
+                    string title;
+                    string category;
+                    
+                    if (string.IsNullOrWhiteSpace(description))
+                    {
+                        title = "Transaction sans titre";
+                        category = "Autres";
+                    }
+                    else
+                    {
+                        var parts = description.Split(new[] { " - " }, 2, StringSplitOptions.None);
+                        title = parts.Length > 0 && !string.IsNullOrWhiteSpace(parts[0]) ? parts[0] : "Transaction sans titre";
+                        category = parts.Length > 1 && !string.IsNullOrWhiteSpace(parts[1]) ? parts[1] : "Autres";
+                    }
+                    
+                    // Vérifier que la date est valide
+                    if (date == default(DateTime))
+                    {
+                        date = DateTime.Now;
+                    }
+                    
+                    list.Add(new Transaction
+                    {
+                        Id = id,
+                        Title = title ?? "Transaction sans titre",
+                        Amount = amount,
+                        Date = date,
+                        Category = category ?? "Autres",
+                        OwnerEmail = ownerEmail ?? string.Empty,
+                        IdUtilisateur = idUtilisateur
+                    });
+                }
+                catch (Exception ex)
+                {
+                    // Ignorer les lignes problématiques et continuer
+                    System.Diagnostics.Debug.WriteLine($"Erreur lors de la lecture d'une transaction: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                }
+            }
         }
+        catch (Exception ex)
+        {
+            // Log l'erreur et retourner une liste vide plutôt que de crasher
+            System.Diagnostics.Debug.WriteLine($"Erreur dans GetTransactionsAsync: {ex.Message}");
+            return list;
+        }
+        
         return list;
     }
 
@@ -310,6 +403,91 @@ public static class DbService
             return null;
         
         return Convert.ToDecimal(result);
+    }
+
+    public static async Task<List<BudgetMensuel>> GetBudgetsAsync(string ownerEmail)
+    {
+        var list = new List<BudgetMensuel>();
+        
+        try
+        {
+            if (string.IsNullOrWhiteSpace(ownerEmail))
+                return list;
+
+            await using var connection = await OpenConnectionAsync();
+            
+            var user = await GetUserByEmailAsync(ownerEmail);
+            if (user == null) return list;
+            
+            await using var cmd = connection.CreateCommand();
+            cmd.CommandText = @"SELECT id_budget, mois, limite, id_utilisateur 
+                                FROM budgetmensuel 
+                                WHERE id_utilisateur=@id_utilisateur 
+                                ORDER BY mois DESC";
+            cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                try
+                {
+                    list.Add(new BudgetMensuel
+                    {
+                        IdBudget = reader.GetInt32(0),
+                        Mois = reader.GetDateTime(1),
+                        Limite = reader.IsDBNull(2) ? null : Convert.ToDecimal(reader.GetValue(2)),
+                        IdUtilisateur = reader.GetInt32(3)
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur lors de la lecture d'un budget: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Erreur dans GetBudgetsAsync: {ex.Message}");
+        }
+        
+        return list;
+    }
+
+    public static async Task<int> CreateBudgetAsync(string ownerEmail, DateTime mois, decimal? limite = null)
+    {
+        await using var connection = await OpenConnectionAsync();
+        
+        var user = await GetUserByEmailAsync(ownerEmail);
+        if (user == null) throw new Exception("Utilisateur introuvable");
+        
+        var moisBudget = new DateTime(mois.Year, mois.Month, 1);
+        
+        // Vérifier si un budget existe déjà pour ce mois
+        await using var cmdCheck = connection.CreateCommand();
+        cmdCheck.CommandText = "SELECT id_budget FROM budgetmensuel WHERE mois = @mois AND id_utilisateur = @id_utilisateur LIMIT 1";
+        cmdCheck.Parameters.AddWithValue("@mois", moisBudget);
+        cmdCheck.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        var existingId = await cmdCheck.ExecuteScalarAsync();
+        if (existingId != null && existingId != DBNull.Value)
+        {
+            return Convert.ToInt32(existingId);
+        }
+        
+        // Créer un nouveau budget
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = "INSERT INTO budgetmensuel (mois, limite, id_utilisateur) VALUES (@mois, @limite, @id_utilisateur); SELECT LAST_INSERT_ID();";
+        cmd.Parameters.AddWithValue("@mois", moisBudget);
+        cmd.Parameters.AddWithValue("@limite", limite.HasValue ? (object)limite.Value : DBNull.Value);
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        var result = await cmd.ExecuteScalarAsync();
+        if (result == null || result == DBNull.Value)
+        {
+            throw new Exception("Erreur lors de la création du budget");
+        }
+        
+        return Convert.ToInt32(result);
     }
 }
 

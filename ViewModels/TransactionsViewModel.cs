@@ -25,12 +25,16 @@ namespace Projet_Budget_M1.ViewModels
         private string _title = string.Empty;
         private string _amount = "0.00";
         private DateTime _date = DateTime.Now;
-        private string _selectedCategory = "Alimentation";
+        private Categorie? _selectedCategory = null;
         private string _categoryIcon = "🍽️";
         private BudgetMensuel? _selectedBudget = null;
         private ObservableCollection<BudgetMensuel> _availableBudgets = new();
+        private ObservableCollection<Categorie> _availableCategories = new();
+        private ObservableCollection<CategorieWrapper> _availableCategoriesForBudget = new();
         private bool _createNewBudget = false;
         private string _newBudgetLimit = string.Empty;
+        private bool _createNewCategory = false;
+        private string _newCategoryName = string.Empty;
 
         // Propriétés des filtres
         private bool _isFilterPanelVisible = false;
@@ -87,17 +91,57 @@ namespace Projet_Budget_M1.ViewModels
         public DateTime Date
         {
             get => _date;
-            set => SetProperty(ref _date, value);
+            set
+            {
+                if (SetProperty(ref _date, value))
+                {
+                    // Vérifier le budget pour la nouvelle date
+                    CheckBudgetForDate();
+                }
+            }
         }
 
-        public string SelectedCategory
+        private async void CheckBudgetForDate()
+        {
+            if (string.IsNullOrWhiteSpace(_currentUserEmail) || !IsOverlayVisible)
+                return;
+
+            try
+            {
+                // Recharger les budgets et sélectionner celui du mois si disponible
+                var budgets = await DbService.GetBudgetsAsync(_currentUserEmail);
+                AvailableBudgets.Clear();
+                foreach (var budget in budgets)
+                {
+                    AvailableBudgets.Add(budget);
+                }
+                
+                var transactionMonth = new DateTime(Date.Year, Date.Month, 1);
+                var budgetForMonth = AvailableBudgets.FirstOrDefault(b => b.Mois == transactionMonth);
+                
+                // Si un budget existe pour ce mois et qu'aucun n'est sélectionné, le sélectionner
+                if (budgetForMonth != null && SelectedBudget == null && !CreateNewBudget)
+                {
+                    SelectedBudget = budgetForMonth;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur lors de la vérification du budget: {ex.Message}");
+            }
+        }
+
+        public Categorie? SelectedCategory
         {
             get => _selectedCategory;
             set
             {
                 if (SetProperty(ref _selectedCategory, value))
                 {
-                    CategoryIcon = GetCategoryIcon(value);
+                    if (value != null)
+                    {
+                        CategoryIcon = GetCategoryIcon(value.NomCategorie);
+                    }
                 }
             }
         }
@@ -114,16 +158,52 @@ namespace Projet_Budget_M1.ViewModels
             set => SetProperty(ref _availableBudgets, value);
         }
 
+        public ObservableCollection<Categorie> AvailableCategories
+        {
+            get => _availableCategories;
+            set => SetProperty(ref _availableCategories, value);
+        }
+
+        public ObservableCollection<CategorieWrapper> AvailableCategoriesForBudget
+        {
+            get => _availableCategoriesForBudget;
+            set => SetProperty(ref _availableCategoriesForBudget, value);
+        }
+
         public BudgetMensuel? SelectedBudget
         {
             get => _selectedBudget;
-            set => SetProperty(ref _selectedBudget, value);
+            set
+            {
+                if (SetProperty(ref _selectedBudget, value))
+                {
+                    // Si on sélectionne un budget, décocher "créer un nouveau budget"
+                    if (value != null)
+                    {
+                        CreateNewBudget = false;
+                        // Charger les catégories associées à ce budget
+                        LoadCategoriesForBudget(value.IdBudget);
+                    }
+                }
+            }
         }
 
         public bool CreateNewBudget
         {
             get => _createNewBudget;
-            set => SetProperty(ref _createNewBudget, value);
+            set
+            {
+                if (SetProperty(ref _createNewBudget, value))
+                {
+                    // Si on coche "créer un nouveau budget", désélectionner le budget existant
+                    if (value)
+                    {
+                        SelectedBudget = null;
+                        // Charger toutes les catégories disponibles (fire and forget)
+                        _ = LoadAllCategories();
+                    }
+                }
+            }
         }
 
         public string NewBudgetLimit
@@ -132,8 +212,28 @@ namespace Projet_Budget_M1.ViewModels
             set => SetProperty(ref _newBudgetLimit, value);
         }
 
-        public string[] Categories { get; } = { "Alimentation", "Transport", "Logement", "Santé", "Loisirs", "Autres" };
-        public string[] FilterCategories { get; } = { "Toutes", "Alimentation", "Transport", "Logement", "Santé", "Loisirs", "Autres" };
+        public bool CreateNewCategory
+        {
+            get => _createNewCategory;
+            set
+            {
+                if (SetProperty(ref _createNewCategory, value))
+                {
+                    if (value)
+                    {
+                        SelectedCategory = null;
+                    }
+                }
+            }
+        }
+
+        public string NewCategoryName
+        {
+            get => _newCategoryName;
+            set => SetProperty(ref _newCategoryName, value);
+        }
+
+        public string[] FilterCategories { get; private set; } = Array.Empty<string>();
 
         // Propriétés des filtres
         public bool IsFilterPanelVisible
@@ -236,6 +336,10 @@ namespace Projet_Budget_M1.ViewModels
         {
             _currentUserEmail = Preferences.Default.Get("userEmail", string.Empty);
             
+            // Initialiser FilterCategories avec au moins "Toutes"
+            FilterCategories = new[] { "Toutes" };
+            FilterCategory = "Toutes";
+            
             LoadDataCommand = new RelayCommand(async () => await LoadAsync());
             AddTransactionCommand = new RelayCommand(OpenAddForm);
             EditTransactionCommand = new RelayCommand<Transaction>(EditTransaction);
@@ -267,17 +371,49 @@ namespace Projet_Budget_M1.ViewModels
             IsLoading = true;
             try
             {
+                // S'assurer que TransactionGroups est initialisé
+                if (TransactionGroups == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("TransactionGroups est null, initialisation...");
+                    return;
+                }
+                
+                // Charger les catégories au démarrage (avec gestion d'erreur)
+                try
+                {
+                    await LoadAllCategories();
+                }
+                catch (Exception catEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur lors du chargement des catégories dans LoadAsync: {catEx.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Stack trace catégories: {catEx.StackTrace}");
+                    // Continuer même si le chargement des catégories échoue
+                }
+                
+                // Charger les transactions
                 var data = await DbService.GetTransactionsAsync(_currentUserEmail, search);
                 _allTransactions = data ?? new List<Transaction>();
+                
+                // S'assurer que _allTransactions n'est pas null
+                if (_allTransactions == null)
+                {
+                    _allTransactions = new List<Transaction>();
+                }
+                
+                // Appliquer les filtres
                 ApplyFilters();
             }
             catch (Exception ex)
             {
                 _allTransactions = new List<Transaction>();
-                TransactionGroups.Clear();
+                if (TransactionGroups != null)
+                {
+                    TransactionGroups.Clear();
+                }
                 
                 System.Diagnostics.Debug.WriteLine($"Erreur dans LoadAsync: {ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException?.Message}");
                 
                 try
                 {
@@ -354,13 +490,26 @@ namespace Projet_Budget_M1.ViewModels
         {
             try
             {
+                if (TransactionGroups == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("TransactionGroups est null dans GroupTransactions");
+                    return;
+                }
+                
                 TransactionGroups.Clear();
 
                 if (transactions == null || transactions.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("Aucune transaction à grouper");
                     return;
+                }
 
                 var today = DateTime.Today;
-                var thisWeekStart = today.AddDays(-(int)today.DayOfWeek);
+                // Calculer le début de la semaine (lundi)
+                var dayOfWeek = (int)today.DayOfWeek;
+                // En C#, DayOfWeek.Sunday = 0, donc on doit ajuster
+                var daysFromMonday = dayOfWeek == 0 ? 6 : dayOfWeek - 1;
+                var thisWeekStart = today.AddDays(-daysFromMonday);
                 var thisMonthStart = new DateTime(today.Year, today.Month, 1);
                 var lastMonthStart = thisMonthStart.AddMonths(-1);
 
@@ -408,7 +557,11 @@ namespace Projet_Budget_M1.ViewModels
                             var firstTransaction = g.FirstOrDefault();
                             if (firstTransaction == null) return int.MaxValue;
                             var firstDate = firstTransaction.Date;
-                            return (int)(firstDate - DateTime.MinValue).TotalDays;
+                            var days = (firstDate - DateTime.MinValue).TotalDays;
+                            // Limiter à la plage d'un int pour éviter les dépassements
+                            if (days > int.MaxValue) return int.MaxValue;
+                            if (days < int.MinValue) return int.MinValue;
+                            return (int)days;
                         }
                         catch
                         {
@@ -427,7 +580,11 @@ namespace Projet_Budget_M1.ViewModels
                             var firstTransaction = g.FirstOrDefault();
                             if (firstTransaction == null) return 0;
                             var firstDate = firstTransaction.Date;
-                            return (int)(firstDate - DateTime.MinValue).TotalDays;
+                            var days = (firstDate - DateTime.MinValue).TotalDays;
+                            // Limiter à la plage d'un int pour éviter les dépassements
+                            if (days > int.MaxValue) return int.MaxValue;
+                            if (days < int.MinValue) return int.MinValue;
+                            return (int)days;
                         }
                         catch
                         {
@@ -439,21 +596,59 @@ namespace Projet_Budget_M1.ViewModels
                 {
                     try
                     {
+                        if (group == null) continue;
+                        
                         var firstTransaction = group.FirstOrDefault();
-                        if (firstTransaction == null) continue;
+                        if (firstTransaction == null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Groupe '{group.Key}' n'a pas de première transaction");
+                            continue;
+                        }
 
                         var transactionGroup = new TransactionGroup(group.Key, firstTransaction.Date);
-                        foreach (var transaction in group.Where(t => t != null))
+                        
+                        // Compter les transactions valides
+                        var validTransactionsInGroup = group.Where(t => t != null).ToList();
+                        System.Diagnostics.Debug.WriteLine($"Ajout du groupe '{group.Key}' avec {validTransactionsInGroup.Count} transactions");
+                        
+                        foreach (var transaction in validTransactionsInGroup)
                         {
-                            transactionGroup.Add(transaction);
+                            try
+                            {
+                                if (transaction != null)
+                                {
+                                    transactionGroup.Add(transaction);
+                                }
+                            }
+                            catch (Exception txEx)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Erreur lors de l'ajout d'une transaction au groupe: {txEx.Message}");
+                            }
                         }
-                        TransactionGroups.Add(transactionGroup);
+                        
+                        // Ne ajouter le groupe que s'il contient au moins une transaction
+                        if (transactionGroup.Count > 0)
+                        {
+                            TransactionGroups.Add(transactionGroup);
+                            System.Diagnostics.Debug.WriteLine($"Groupe '{group.Key}' ajouté avec succès, {transactionGroup.Count} transactions");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Groupe '{group.Key}' ignoré car vide");
+                        }
                     }
                     catch (Exception ex)
                     {
                         System.Diagnostics.Debug.WriteLine($"Erreur lors de l'ajout d'un groupe: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                        if (ex.InnerException != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                        }
                     }
                 }
+                
+                System.Diagnostics.Debug.WriteLine($"Groupement terminé: {TransactionGroups.Count} groupes créés");
             }
             catch (Exception ex)
             {
@@ -566,7 +761,7 @@ namespace Projet_Budget_M1.ViewModels
             FormTitle = "Nouvelle transaction";
             ResetForm();
             
-            // Charger les budgets disponibles
+            // Charger tous les budgets disponibles
             try
             {
                 var budgets = await DbService.GetBudgetsAsync(_currentUserEmail);
@@ -576,30 +771,118 @@ namespace Projet_Budget_M1.ViewModels
                     AvailableBudgets.Add(budget);
                 }
                 
-                // Sélectionner le budget du mois en cours par défaut
-                var currentMonth = new DateTime(Date.Year, Date.Month, 1);
-                SelectedBudget = AvailableBudgets.FirstOrDefault(b => b.Mois == currentMonth);
+                // Sélectionner par défaut le budget du mois de la transaction s'il existe
+                var transactionMonth = new DateTime(Date.Year, Date.Month, 1);
+                SelectedBudget = AvailableBudgets.FirstOrDefault(b => b.Mois == transactionMonth);
                 
-                // Si aucun budget n'existe pour ce mois, proposer de créer un nouveau budget
-                if (SelectedBudget == null)
-                {
-                    CreateNewBudget = true;
-                    SelectedBudget = null; // S'assurer qu'aucun budget n'est sélectionné
-                }
-                else
-                {
-                    CreateNewBudget = false; // Un budget existe, ne pas créer de nouveau
-                }
+                // Si aucun budget n'existe pour ce mois, ne pas pré-cocher "créer un nouveau budget"
+                // L'utilisateur choisira s'il veut en créer un
+                CreateNewBudget = false;
+                
+                // Charger toutes les catégories disponibles
+                await LoadAllCategories();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Erreur lors du chargement des budgets: {ex.Message}");
-                // En cas d'erreur, proposer de créer un nouveau budget
-                CreateNewBudget = true;
-                SelectedBudget = null;
+                CreateNewBudget = false;
             }
             
             IsOverlayVisible = true;
+        }
+
+        private async Task LoadAllCategories()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_currentUserEmail))
+                {
+                    _currentUserEmail = Preferences.Default.Get("userEmail", string.Empty);
+                    if (string.IsNullOrWhiteSpace(_currentUserEmail))
+                    {
+                        // Pas d'utilisateur connecté, initialiser avec des valeurs par défaut
+                        FilterCategories = new[] { "Toutes" };
+                        OnPropertyChanged(nameof(FilterCategories));
+                        return;
+                    }
+                }
+                
+                var categories = await DbService.GetCategoriesAsync(_currentUserEmail);
+                
+                // S'assurer que les collections sont initialisées
+                if (AvailableCategories == null)
+                {
+                    AvailableCategories = new ObservableCollection<Categorie>();
+                }
+                if (AvailableCategoriesForBudget == null)
+                {
+                    AvailableCategoriesForBudget = new ObservableCollection<CategorieWrapper>();
+                }
+                
+                AvailableCategories.Clear();
+                foreach (var category in categories ?? new List<Categorie>())
+                {
+                    AvailableCategories.Add(category);
+                }
+                
+                // Charger aussi pour la sélection de budget
+                AvailableCategoriesForBudget.Clear();
+                foreach (var category in categories ?? new List<Categorie>())
+                {
+                    AvailableCategoriesForBudget.Add(new CategorieWrapper { Categorie = category, IsSelected = false });
+                }
+                
+                // Mettre à jour FilterCategories pour inclure "Toutes" + toutes les catégories
+                var filterList = new List<string> { "Toutes" };
+                if (categories != null && categories.Count > 0)
+                {
+                    filterList.AddRange(categories.Select(c => c.NomCategorie));
+                }
+                FilterCategories = filterList.ToArray();
+                OnPropertyChanged(nameof(FilterCategories));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur lors du chargement des catégories: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                
+                // En cas d'erreur, initialiser avec au moins "Toutes"
+                FilterCategories = new[] { "Toutes" };
+                OnPropertyChanged(nameof(FilterCategories));
+            }
+        }
+
+        private async void LoadCategoriesForBudget(int budgetId)
+        {
+            try
+            {
+                var categories = await DbService.GetCategoriesForBudgetAsync(budgetId);
+                AvailableCategories.Clear();
+                foreach (var category in categories)
+                {
+                    AvailableCategories.Add(category);
+                }
+                
+                // Mettre à jour aussi AvailableCategoriesForBudget
+                AvailableCategoriesForBudget.Clear();
+                var allCategories = await DbService.GetCategoriesAsync(_currentUserEmail);
+                foreach (var category in allCategories)
+                {
+                    bool isSelected = categories.Any(c => c.IdCategorie == category.IdCategorie);
+                    AvailableCategoriesForBudget.Add(new CategorieWrapper { Categorie = category, IsSelected = isSelected });
+                }
+                
+                // Si aucune catégorie n'est associée au budget, charger toutes les catégories
+                if (AvailableCategories.Count == 0)
+                {
+                    await LoadAllCategories();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur lors du chargement des catégories du budget: {ex.Message}");
+                await LoadAllCategories();
+            }
         }
 
         private async void EditTransaction(Transaction? transaction)
@@ -614,9 +897,20 @@ namespace Projet_Budget_M1.ViewModels
 
             _currentTransaction = transaction;
             FormTitle = "Modifier transaction";
+            
+            // Charger les catégories AVANT de charger la transaction dans le formulaire
+            try
+            {
+                await LoadAllCategories();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur lors du chargement des catégories: {ex.Message}");
+            }
+            
             LoadTransactionIntoForm(transaction);
             
-            // Charger les budgets disponibles
+            // Charger tous les budgets disponibles
             try
             {
                 var budgets = await DbService.GetBudgetsAsync(_currentUserEmail);
@@ -626,7 +920,7 @@ namespace Projet_Budget_M1.ViewModels
                     AvailableBudgets.Add(budget);
                 }
                 
-                // Sélectionner le budget du mois de la transaction
+                // Sélectionner le budget du mois de la transaction s'il existe
                 var transactionMonth = new DateTime(transaction.Date.Year, transaction.Date.Month, 1);
                 SelectedBudget = AvailableBudgets.FirstOrDefault(b => b.Mois == transactionMonth);
                 CreateNewBudget = false;
@@ -634,6 +928,7 @@ namespace Projet_Budget_M1.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Erreur lors du chargement des budgets: {ex.Message}");
+                CreateNewBudget = false;
             }
             
             IsOverlayVisible = true;
@@ -645,14 +940,11 @@ namespace Projet_Budget_M1.ViewModels
             Amount = tx.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture);
             Date = tx.Date;
             
-            var categoryIndex = Array.IndexOf(Categories, tx.Category);
-            if (categoryIndex >= 0)
+            // Trouver la catégorie correspondante (les catégories doivent être déjà chargées)
+            SelectedCategory = AvailableCategories?.FirstOrDefault(c => c.NomCategorie == tx.Category);
+            if (SelectedCategory == null && AvailableCategories != null && AvailableCategories.Count > 0)
             {
-                SelectedCategory = Categories[categoryIndex];
-            }
-            else
-            {
-                SelectedCategory = Categories[0];
+                SelectedCategory = AvailableCategories[0];
             }
         }
 
@@ -697,27 +989,83 @@ namespace Projet_Budget_M1.ViewModels
 
             try
             {
-                // Gérer le budget - s'assurer qu'un budget est toujours disponible
+                // Gérer la catégorie AVANT le budget pour avoir son ID
+                string categoryName = "Autres";
+                int? newCategoryId = null;
+                
+                if (CreateNewCategory && !string.IsNullOrWhiteSpace(NewCategoryName))
+                {
+                    // Créer une nouvelle catégorie et récupérer son ID
+                    newCategoryId = await DbService.CreateCategoryAsync(_currentUserEmail, NewCategoryName.Trim());
+                    categoryName = NewCategoryName.Trim();
+                    // Recharger les catégories pour avoir la nouvelle
+                    await LoadAllCategories();
+                }
+                else if (SelectedCategory != null)
+                {
+                    // Utiliser la catégorie sélectionnée
+                    categoryName = SelectedCategory.NomCategorie;
+                }
+                
+                // Gérer le budget selon le choix de l'utilisateur
                 int? budgetId = null;
+                List<int>? categoryIdsForBudget = null;
                 
                 if (CreateNewBudget)
                 {
-                    // Créer un nouveau budget
+                    // Créer un nouveau budget pour le mois de la transaction
                     decimal? limite = null;
-                    if (!string.IsNullOrWhiteSpace(NewBudgetLimit) && 
-                        decimal.TryParse(NewBudgetLimit.Replace(",", "."), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out decimal limitValue))
+                    if (!string.IsNullOrWhiteSpace(NewBudgetLimit))
                     {
-                        limite = limitValue;
+                        // Nettoyer la chaîne (enlever les espaces, remplacer virgule par point)
+                        var cleanedLimit = NewBudgetLimit.Trim().Replace(",", ".").Replace(" ", "");
+                        System.Diagnostics.Debug.WriteLine($"Tentative de parsing de la limite: '{NewBudgetLimit}' -> '{cleanedLimit}'");
+                        
+                        if (decimal.TryParse(cleanedLimit, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal limitValue))
+                        {
+                            limite = limitValue;
+                            System.Diagnostics.Debug.WriteLine($"Limite parsée avec succès: {limite.Value}");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Échec du parsing de la limite: '{cleanedLimit}'");
+                        }
                     }
                     
-                    budgetId = await DbService.CreateBudgetAsync(_currentUserEmail, Date, limite);
+                    // Préparer les catégories à associer au budget
+                    categoryIdsForBudget = new List<int>();
+                    
+                    // Ajouter les catégories sélectionnées pour le budget
+                    foreach (var wrapper in AvailableCategoriesForBudget.Where(w => w.IsSelected))
+                    {
+                        if (!categoryIdsForBudget.Contains(wrapper.Categorie.IdCategorie))
+                        {
+                            categoryIdsForBudget.Add(wrapper.Categorie.IdCategorie);
+                        }
+                    }
+                    
+                    // Ajouter aussi la catégorie de la transaction si elle n'est pas déjà dans la liste
+                    if (newCategoryId.HasValue)
+                    {
+                        // Si on vient de créer une catégorie, utiliser directement son ID
+                        if (!categoryIdsForBudget.Contains(newCategoryId.Value))
+                        {
+                            categoryIdsForBudget.Add(newCategoryId.Value);
+                        }
+                    }
+                    else if (SelectedCategory != null && !categoryIdsForBudget.Contains(SelectedCategory.IdCategorie))
+                    {
+                        categoryIdsForBudget.Add(SelectedCategory.IdCategorie);
+                    }
+                    
+                    budgetId = await DbService.CreateBudgetAsync(_currentUserEmail, Date, limite, categoryIdsForBudget);
                 }
                 else if (SelectedBudget != null)
                 {
-                    // Utiliser le budget sélectionné
+                    // Utiliser le budget sélectionné par l'utilisateur
                     budgetId = SelectedBudget.IdBudget;
                 }
-                // Si budgetId est null, AddOrUpdateTransactionAsync créera automatiquement un budget
+                // Si budgetId est null, AddOrUpdateTransactionAsync créera automatiquement un budget sans limite
 
                 Transaction transaction;
                 if (_currentTransaction != null && _currentTransaction.Id > 0)
@@ -737,16 +1085,28 @@ namespace Projet_Budget_M1.ViewModels
                 transaction.Title = Title.Trim();
                 transaction.Amount = amount;
                 transaction.Date = Date;
-                transaction.Category = SelectedCategory;
+                transaction.Category = categoryName;
                 transaction.OwnerEmail = _currentUserEmail;
 
                 var id = await DbService.AddOrUpdateTransactionAsync(transaction, budgetId);
                 transaction.Id = id;
 
+                // Fermer l'overlay avant de recharger pour éviter les problèmes de thread
+                CloseOverlay();
+                
+                // Afficher le message de succès
                 await Application.Current!.MainPage!.DisplayAlert("Succès", "Transaction enregistrée", "OK");
 
-                CloseOverlay();
-                await LoadAsync();
+                // Recharger les données de manière sécurisée
+                try
+                {
+                    await LoadAsync();
+                }
+                catch (Exception loadEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur lors du rechargement: {loadEx.Message}");
+                    // Ne pas afficher d'erreur à l'utilisateur car la transaction est déjà sauvegardée
+                }
             }
             catch (Exception ex)
             {
@@ -766,11 +1126,20 @@ namespace Projet_Budget_M1.ViewModels
             Title = string.Empty;
             Amount = "0.00";
             Date = DateTime.Now;
-            SelectedCategory = Categories[0];
-            CategoryIcon = GetCategoryIcon(Categories[0]);
-            SelectedBudget = null;
-            CreateNewBudget = false;
+            SelectedCategory = AvailableCategories?.FirstOrDefault();
+            CategoryIcon = SelectedCategory != null ? GetCategoryIcon(SelectedCategory.NomCategorie) : "📋";
             NewBudgetLimit = string.Empty;
+            CreateNewBudget = false;
+            CreateNewCategory = false;
+            NewCategoryName = string.Empty;
+            // Réinitialiser les sélections de catégories pour le budget
+            if (AvailableCategoriesForBudget != null)
+            {
+                foreach (var wrapper in AvailableCategoriesForBudget)
+                {
+                    wrapper.IsSelected = false;
+                }
+            }
         }
 
         private string GetCategoryIcon(string category)

@@ -18,18 +18,47 @@ namespace Projet_Budget_M1.Views
         protected override async void OnAppearing()
         {
             base.OnAppearing();
+            
+            // Attendre que la page soit complètement chargée
+            await Task.Delay(50);
+            
             try
             {
-                if (_viewModel != null)
+                if (_viewModel == null)
                 {
-                    await _viewModel.LoadAsync();
+                    System.Diagnostics.Debug.WriteLine("ViewModel est null dans OnAppearing");
+                    return;
                 }
+                
+                // Vérifier que le BindingContext est bien défini
+                if (BindingContext == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("BindingContext est null, réinitialisation...");
+                    BindingContext = _viewModel;
+                }
+                
+                await _viewModel.LoadAsync();
             }
             catch (Exception ex)
             {
                 // Log l'erreur pour le débogage
                 System.Diagnostics.Debug.WriteLine($"Erreur dans OnAppearing: {ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Inner stack trace: {ex.InnerException.StackTrace}");
+                }
+                
+                // Afficher une alerte à l'utilisateur
+                try
+                {
+                    await DisplayAlert("Erreur", $"Erreur lors du chargement des transactions: {ex.Message}", "OK");
+                }
+                catch
+                {
+                    // Ignorer si on ne peut pas afficher l'alerte
+                }
             }
         }
 

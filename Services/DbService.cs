@@ -453,8 +453,10 @@ public static class DbService
         return list;
     }
 
-    public static async Task<int> CreateBudgetAsync(string ownerEmail, DateTime mois, decimal? limite = null)
+    public static async Task<int> CreateBudgetAsync(string ownerEmail, DateTime mois, decimal? limite = null, List<int>? categoryIds = null)
     {
+        System.Diagnostics.Debug.WriteLine($"CreateBudgetAsync appelé avec limite: {(limite.HasValue ? limite.Value.ToString() : "null")}");
+        
         await using var connection = await OpenConnectionAsync();
         
         var user = await GetUserByEmailAsync(ownerEmail);
@@ -469,25 +471,240 @@ public static class DbService
         cmdCheck.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
         
         var existingId = await cmdCheck.ExecuteScalarAsync();
+        int budgetId;
+        
+        if (existingId != null && existingId != DBNull.Value)
+        {
+            budgetId = Convert.ToInt32(existingId);
+            
+            // Si une limite est fournie, mettre à jour le budget existant
+            if (limite.HasValue)
+            {
+                // Convertir decimal en int (la colonne limite est de type int dans la BDD)
+                int limiteInt = (int)Math.Round(limite.Value);
+                System.Diagnostics.Debug.WriteLine($"Mise à jour du budget {budgetId} avec limite: {limite.Value} (converti en int: {limiteInt})");
+                await using var cmdUpdate = connection.CreateCommand();
+                cmdUpdate.CommandText = "UPDATE budgetmensuel SET limite = @limite WHERE id_budget = @id_budget";
+                var paramLimite = cmdUpdate.Parameters.Add("@limite", MySqlConnector.MySqlDbType.Int32);
+                paramLimite.Value = limiteInt;
+                cmdUpdate.Parameters.AddWithValue("@id_budget", budgetId);
+                var rowsAffected = await cmdUpdate.ExecuteNonQueryAsync();
+                System.Diagnostics.Debug.WriteLine($"Mise à jour effectuée: {rowsAffected} ligne(s) affectée(s)");
+            }
+        }
+        else
+        {
+            // Créer un nouveau budget
+            await using var cmd = connection.CreateCommand();
+            cmd.CommandText = "INSERT INTO budgetmensuel (mois, limite, id_utilisateur) VALUES (@mois, @limite, @id_utilisateur); SELECT LAST_INSERT_ID();";
+            cmd.Parameters.AddWithValue("@mois", moisBudget);
+            
+            // S'assurer que la limite est correctement passée (convertir decimal en int)
+            if (limite.HasValue)
+            {
+                int limiteInt = (int)Math.Round(limite.Value);
+                System.Diagnostics.Debug.WriteLine($"Création d'un budget avec limite: {limite.Value} (converti en int: {limiteInt})");
+                var paramLimite = cmd.Parameters.Add("@limite", MySqlConnector.MySqlDbType.Int32);
+                paramLimite.Value = limiteInt;
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("Création d'un budget sans limite");
+                var paramLimite = cmd.Parameters.Add("@limite", MySqlConnector.MySqlDbType.Int32);
+                paramLimite.Value = DBNull.Value;
+            }
+            
+            cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+            
+            var result = await cmd.ExecuteScalarAsync();
+            if (result == null || result == DBNull.Value)
+            {
+                throw new Exception("Erreur lors de la création du budget");
+            }
+            
+            budgetId = Convert.ToInt32(result);
+        }
+        
+        // Associer les catégories au budget si fournies
+        if (categoryIds != null && categoryIds.Count > 0)
+        {
+            await AssociateCategoriesToBudgetAsync(budgetId, categoryIds);
+        }
+        
+        return budgetId;
+    }
+
+    public static async Task<List<Categorie>> GetCategoriesAsync(string ownerEmail)
+    {
+        var list = new List<Categorie>();
+        
+        try
+        {
+            if (string.IsNullOrWhiteSpace(ownerEmail))
+                return list;
+
+            await using var connection = await OpenConnectionAsync();
+            
+            var user = await GetUserByEmailAsync(ownerEmail);
+            if (user == null) return list;
+            
+            await using var cmd = connection.CreateCommand();
+            cmd.CommandText = @"SELECT id_categorie, nom_categorie, id_utilisateur 
+                                FROM catégorie 
+                                WHERE id_utilisateur=@id_utilisateur 
+                                ORDER BY nom_categorie";
+            cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                try
+                {
+                    list.Add(new Categorie
+                    {
+                        IdCategorie = reader.GetInt32(0),
+                        NomCategorie = reader.GetString(1),
+                        IdUtilisateur = reader.GetInt32(2)
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur lors de la lecture d'une catégorie: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Erreur dans GetCategoriesAsync: {ex.Message}");
+        }
+        
+        return list;
+    }
+
+    public static async Task<int> CreateCategoryAsync(string ownerEmail, string nomCategorie)
+    {
+        await using var connection = await OpenConnectionAsync();
+        
+        var user = await GetUserByEmailAsync(ownerEmail);
+        if (user == null) throw new Exception("Utilisateur introuvable");
+        
+        // Vérifier si la catégorie existe déjà
+        await using var cmdCheck = connection.CreateCommand();
+        cmdCheck.CommandText = "SELECT id_categorie FROM catégorie WHERE nom_categorie = @nom AND id_utilisateur = @id_utilisateur LIMIT 1";
+        cmdCheck.Parameters.AddWithValue("@nom", nomCategorie);
+        cmdCheck.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        
+        var existingId = await cmdCheck.ExecuteScalarAsync();
         if (existingId != null && existingId != DBNull.Value)
         {
             return Convert.ToInt32(existingId);
         }
         
-        // Créer un nouveau budget
+        // Créer une nouvelle catégorie
         await using var cmd = connection.CreateCommand();
-        cmd.CommandText = "INSERT INTO budgetmensuel (mois, limite, id_utilisateur) VALUES (@mois, @limite, @id_utilisateur); SELECT LAST_INSERT_ID();";
-        cmd.Parameters.AddWithValue("@mois", moisBudget);
-        cmd.Parameters.AddWithValue("@limite", limite.HasValue ? (object)limite.Value : DBNull.Value);
+        cmd.CommandText = "INSERT INTO catégorie (nom_categorie, id_utilisateur) VALUES (@nom, @id_utilisateur); SELECT LAST_INSERT_ID();";
+        cmd.Parameters.AddWithValue("@nom", nomCategorie);
         cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
         
         var result = await cmd.ExecuteScalarAsync();
         if (result == null || result == DBNull.Value)
         {
-            throw new Exception("Erreur lors de la création du budget");
+            throw new Exception("Erreur lors de la création de la catégorie");
         }
         
         return Convert.ToInt32(result);
+    }
+
+    public static async Task AssociateCategoriesToBudgetAsync(int budgetId, List<int> categoryIds)
+    {
+        if (categoryIds == null || categoryIds.Count == 0)
+            return;
+            
+        await using var connection = await OpenConnectionAsync();
+        
+        // Vérifier que le budget existe
+        await using var cmdCheckBudget = connection.CreateCommand();
+        cmdCheckBudget.CommandText = "SELECT COUNT(*) FROM budgetmensuel WHERE id_budget = @id_budget";
+        cmdCheckBudget.Parameters.AddWithValue("@id_budget", budgetId);
+        var budgetExists = Convert.ToInt32(await cmdCheckBudget.ExecuteScalarAsync()) > 0;
+        if (!budgetExists)
+        {
+            throw new Exception($"Le budget avec l'ID {budgetId} n'existe pas");
+        }
+        
+        // Vérifier que toutes les catégories existent (optionnel, mais recommandé)
+        // On va vérifier lors de l'insertion et gérer les erreurs
+        
+        // Supprimer les associations existantes pour ce budget
+        await using var cmdDelete = connection.CreateCommand();
+        cmdDelete.CommandText = "DELETE FROM attribuer WHERE id_budget = @id_budget";
+        cmdDelete.Parameters.AddWithValue("@id_budget", budgetId);
+        await cmdDelete.ExecuteNonQueryAsync();
+        
+        // Ajouter les nouvelles associations
+        foreach (var categoryId in categoryIds)
+        {
+            try
+            {
+                await using var cmdInsert = connection.CreateCommand();
+                cmdInsert.CommandText = "INSERT INTO attribuer (id_categorie, id_budget) VALUES (@id_categorie, @id_budget)";
+                cmdInsert.Parameters.AddWithValue("@id_categorie", categoryId);
+                cmdInsert.Parameters.AddWithValue("@id_budget", budgetId);
+                await cmdInsert.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex) when (ex.Number == 1062)
+            {
+                // Duplicate entry - ignorer
+                System.Diagnostics.Debug.WriteLine($"Association déjà existante: catégorie {categoryId} - budget {budgetId}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur lors de l'association catégorie {categoryId} au budget {budgetId}: {ex.Message}");
+                throw;
+            }
+        }
+    }
+
+    public static async Task<List<Categorie>> GetCategoriesForBudgetAsync(int budgetId)
+    {
+        var list = new List<Categorie>();
+        
+        try
+        {
+            await using var connection = await OpenConnectionAsync();
+            
+            await using var cmd = connection.CreateCommand();
+            cmd.CommandText = @"SELECT c.id_categorie, c.nom_categorie, c.id_utilisateur 
+                                FROM catégorie c
+                                INNER JOIN attribuer a ON c.id_categorie = a.id_categorie
+                                WHERE a.id_budget = @id_budget
+                                ORDER BY c.nom_categorie";
+            cmd.Parameters.AddWithValue("@id_budget", budgetId);
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                try
+                {
+                    list.Add(new Categorie
+                    {
+                        IdCategorie = reader.GetInt32(0),
+                        NomCategorie = reader.GetString(1),
+                        IdUtilisateur = reader.GetInt32(2)
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur lors de la lecture d'une catégorie: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Erreur dans GetCategoriesForBudgetAsync: {ex.Message}");
+        }
+        
+        return list;
     }
 }
 

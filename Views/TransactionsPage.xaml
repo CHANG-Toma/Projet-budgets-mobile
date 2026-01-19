@@ -421,6 +421,8 @@
                                            FontSize="14"
                                            FontAttributes="Bold"
                                            TextColor="#2C3E50" />
+                                    
+                                    <!-- Sélecteur de catégorie existante -->
                                     <Frame BackgroundColor="#ECF0F1"
                                            CornerRadius="10"
                                            Padding="15,0"
@@ -436,11 +438,11 @@
                                             <Picker Grid.Column="1"
                                                     BackgroundColor="Transparent"
                                                     TextColor="#2C3E50"
-                                                    Title=""
+                                                    Title="Sélectionner une catégorie"
                                                     FontSize="16"
-                                                    ItemsSource="{Binding Categories}"
-                                                    SelectedItem="{Binding SelectedCategory, Mode=TwoWay}">
-                                            </Picker>
+                                                    ItemsSource="{Binding AvailableCategories}"
+                                                    SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                                                    ItemDisplayBinding="{Binding NomCategorie}" />
                                             <Label Text="▼"
                                                    Grid.Column="2"
                                                    FontSize="12"
@@ -448,6 +450,52 @@
                                                    VerticalOptions="Center"
                                                    HorizontalOptions="End"
                                                    Margin="5,0,0,0" />
+                                        </Grid>
+                                    </Frame>
+                                    
+                                    <!-- Option: Créer une nouvelle catégorie -->
+                                    <Frame BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent"
+                                           Margin="0,5,0,0">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding CreateNewCategory, Mode=TwoWay}"
+                                                      VerticalOptions="Center"
+                                                      Margin="0,0,10,0" />
+                                            <Label Grid.Column="1"
+                                                   Text="Créer une nouvelle catégorie"
+                                                   FontSize="14"
+                                                   TextColor="#2C3E50"
+                                                   VerticalOptions="Center" />
+                                        </Grid>
+                                    </Frame>
+                                    
+                                    <!-- Champ nom pour nouvelle catégorie (si création) -->
+                                    <Frame IsVisible="{Binding CreateNewCategory}"
+                                           BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent"
+                                           Margin="0,5,0,0">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Label Grid.Column="0"
+                                                   Text="📝"
+                                                   FontSize="16"
+                                                   VerticalOptions="Center"
+                                                   Margin="0,0,10,0" />
+                                            <Entry Grid.Column="1"
+                                                   Placeholder="Nom de la catégorie"
+                                                   BackgroundColor="Transparent"
+                                                   TextColor="#2C3E50"
+                                                   PlaceholderColor="#95A5A6"
+                                                   FontSize="16"
+                                                   Text="{Binding NewCategoryName, Mode=TwoWay}" />
                                         </Grid>
                                     </Frame>
                                 </VerticalStackLayout>
@@ -486,29 +534,8 @@
                                            FontAttributes="Bold"
                                            TextColor="#2C3E50" />
                                     
-                                    <!-- Option: Créer un nouveau budget -->
+                                    <!-- Sélecteur de budget existant -->
                                     <Frame BackgroundColor="#ECF0F1"
-                                           CornerRadius="10"
-                                           Padding="15,0"
-                                           HeightRequest="50"
-                                           HasShadow="False"
-                                           BorderColor="Transparent">
-                                        <Grid ColumnDefinitions="Auto,*,Auto">
-                                            <CheckBox Grid.Column="0"
-                                                      IsChecked="{Binding CreateNewBudget, Mode=TwoWay}"
-                                                      VerticalOptions="Center"
-                                                      Margin="0,0,10,0" />
-                                            <Label Grid.Column="1"
-                                                   Text="Créer un nouveau budget"
-                                                   FontSize="14"
-                                                   TextColor="#2C3E50"
-                                                   VerticalOptions="Center" />
-                                        </Grid>
-                                    </Frame>
-                                    
-                                    <!-- Sélecteur de budget existant (si pas de nouveau budget) -->
-                                    <Frame IsVisible="{Binding CreateNewBudget, Converter={StaticResource InvertedBoolConverter}}"
-                                           BackgroundColor="#ECF0F1"
                                            CornerRadius="10"
                                            Padding="15,0"
                                            HeightRequest="50"
@@ -528,6 +555,27 @@
                                                     ItemsSource="{Binding AvailableBudgets}"
                                                     SelectedItem="{Binding SelectedBudget, Mode=TwoWay}"
                                                     ItemDisplayBinding="{Binding DisplayText}" />
+                                        </Grid>
+                                    </Frame>
+                                    
+                                    <!-- Option: Créer un nouveau budget -->
+                                    <Frame BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent"
+                                           Margin="0,5,0,0">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding CreateNewBudget, Mode=TwoWay}"
+                                                      VerticalOptions="Center"
+                                                      Margin="0,0,10,0" />
+                                            <Label Grid.Column="1"
+                                                   Text="Créer un nouveau budget"
+                                                   FontSize="14"
+                                                   TextColor="#2C3E50"
+                                                   VerticalOptions="Center" />
                                         </Grid>
                                     </Frame>
                                     
@@ -555,6 +603,36 @@
                                                    Keyboard="Numeric"
                                                    Text="{Binding NewBudgetLimit, Mode=TwoWay}" />
                                         </Grid>
+                                    </Frame>
+                                    
+                                    <!-- Sélection des catégories pour le budget (si création) -->
+                                    <Frame IsVisible="{Binding CreateNewBudget}"
+                                           BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,10"
+                                           HasShadow="False"
+                                           BorderColor="Transparent"
+                                           Margin="0,5,0,0">
+                                        <VerticalStackLayout Spacing="5">
+                                            <Label Text="Catégories associées au budget (optionnel)"
+                                                   FontSize="12"
+                                                   TextColor="#7F8C8D" />
+                                            <CollectionView ItemsSource="{Binding AvailableCategoriesForBudget}"
+                                                            HeightRequest="100">
+                                                <CollectionView.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Padding="5">
+                                                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                                            <Label Text="{Binding Categorie.NomCategorie}"
+                                                                   FontSize="14"
+                                                                   TextColor="#2C3E50"
+                                                                   Margin="30,0,0,0"
+                                                                   VerticalOptions="Center" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </CollectionView.ItemTemplate>
+                                            </CollectionView>
+                                        </VerticalStackLayout>
                                     </Frame>
                                 </VerticalStackLayout>
 

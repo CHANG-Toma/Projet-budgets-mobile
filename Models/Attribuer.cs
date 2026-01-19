@@ -3,7 +3,7 @@ namespace Projet_Budget_M1.Models;
 public class Attribuer
 {
     public int IdCategorie { get; set; }
-    public string IdBudget { get; set; } = string.Empty;
+    public int IdBudget { get; set; }
     
     // Navigation properties
     public Categorie? Categorie { get; set; }

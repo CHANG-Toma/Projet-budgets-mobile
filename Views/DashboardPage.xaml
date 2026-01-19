@@ -7,6 +7,7 @@
              BackgroundColor="#F5F5F5">
     <ContentPage.Resources>
         <local:AmountToColorConverter x:Key="AmountToColorConverter" />
+        <local:InvertedBoolConverter x:Key="InvertedBoolConverter" />
     </ContentPage.Resources>
 
     <Grid RowDefinitions="*,Auto">
@@ -477,6 +478,8 @@
                                            FontSize="14"
                                            FontAttributes="Bold"
                                            TextColor="#2C3E50" />
+                                    
+                                    <!-- Sélecteur de catégorie existante -->
                                     <Frame BackgroundColor="#ECF0F1"
                                            CornerRadius="10"
                                            Padding="15,0"
@@ -494,20 +497,10 @@
                                                     Grid.Column="1"
                                                     BackgroundColor="Transparent"
                                                     TextColor="#2C3E50"
-                                                    Title=""
+                                                    Title="Sélectionner une catégorie"
                                                     FontSize="16"
-                                                    SelectedIndexChanged="OnCategorySelected">
-                                                <Picker.ItemsSource>
-                                                    <x:Array Type="{x:Type x:String}">
-                                                        <x:String>Alimentation</x:String>
-                                                        <x:String>Transport</x:String>
-                                                        <x:String>Logement</x:String>
-                                                        <x:String>Santé</x:String>
-                                                        <x:String>Loisirs</x:String>
-                                                        <x:String>Autres</x:String>
-                                                    </x:Array>
-                                                </Picker.ItemsSource>
-                                            </Picker>
+                                                    SelectedIndexChanged="OnCategorySelected"
+                                                    ItemDisplayBinding="{Binding NomCategorie}" />
                                             <Label Text="▼"
                                                    Grid.Column="2"
                                                    FontSize="12"
@@ -515,6 +508,54 @@
                                                    VerticalOptions="Center"
                                                    HorizontalOptions="End"
                                                    Margin="5,0,0,0" />
+                                        </Grid>
+                                    </Frame>
+                                    
+                                    <!-- Option: Créer une nouvelle catégorie -->
+                                    <Frame BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent"
+                                           Margin="0,5,0,0">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <CheckBox x:Name="CreateNewCategoryCheckBox"
+                                                      Grid.Column="0"
+                                                      IsChecked="False"
+                                                      VerticalOptions="Center"
+                                                      Margin="0,0,10,0" />
+                                            <Label Grid.Column="1"
+                                                   Text="Créer une nouvelle catégorie"
+                                                   FontSize="14"
+                                                   TextColor="#2C3E50"
+                                                   VerticalOptions="Center" />
+                                        </Grid>
+                                    </Frame>
+                                    
+                                    <!-- Champ nom pour nouvelle catégorie (si création) -->
+                                    <Frame x:Name="NewCategoryNameFrame"
+                                           IsVisible="False"
+                                           BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent"
+                                           Margin="0,5,0,0">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Label Grid.Column="0"
+                                                   Text="📝"
+                                                   FontSize="16"
+                                                   VerticalOptions="Center"
+                                                   Margin="0,0,10,0" />
+                                            <Entry x:Name="NewCategoryNameEntry"
+                                                   Grid.Column="1"
+                                                   Placeholder="Nom de la catégorie"
+                                                   BackgroundColor="Transparent"
+                                                   TextColor="#2C3E50"
+                                                   PlaceholderColor="#95A5A6"
+                                                   FontSize="16" />
                                         </Grid>
                                     </Frame>
                                 </VerticalStackLayout>
@@ -544,6 +585,117 @@
                                                    VerticalOptions="Center"
                                                    HorizontalOptions="End" />
                                         </Grid>
+                                    </Frame>
+                                </VerticalStackLayout>
+
+                                <!-- Champ Budget -->
+                                <VerticalStackLayout Spacing="5">
+                                    <Label Text="Budget mensuel"
+                                           FontSize="14"
+                                           FontAttributes="Bold"
+                                           TextColor="#2C3E50" />
+                                    
+                                    <!-- Sélecteur de budget existant -->
+                                    <Frame BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Label Grid.Column="0"
+                                                   Text="💰"
+                                                   FontSize="16"
+                                                   VerticalOptions="Center"
+                                                   Margin="0,0,10,0" />
+                                            <Picker x:Name="BudgetPicker"
+                                                    Grid.Column="1"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="#2C3E50"
+                                                    Title="Sélectionner un budget"
+                                                    FontSize="16"
+                                                    ItemDisplayBinding="{Binding DisplayText}" />
+                                        </Grid>
+                                    </Frame>
+                                    
+                                    <!-- Option: Créer un nouveau budget -->
+                                    <Frame BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent"
+                                           Margin="0,5,0,0">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <CheckBox x:Name="CreateNewBudgetCheckBox"
+                                                      Grid.Column="0"
+                                                      IsChecked="False"
+                                                      VerticalOptions="Center"
+                                                      Margin="0,0,10,0" />
+                                            <Label Grid.Column="1"
+                                                   Text="Créer un nouveau budget"
+                                                   FontSize="14"
+                                                   TextColor="#2C3E50"
+                                                   VerticalOptions="Center" />
+                                        </Grid>
+                                    </Frame>
+                                    
+                                    <!-- Champ limite pour nouveau budget (si création) -->
+                                    <Frame x:Name="NewBudgetLimitFrame"
+                                           IsVisible="False"
+                                           BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,0"
+                                           HeightRequest="50"
+                                           HasShadow="False"
+                                           BorderColor="Transparent"
+                                           Margin="0,5,0,0">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Label Grid.Column="0"
+                                                   Text="💵"
+                                                   FontSize="16"
+                                                   VerticalOptions="Center"
+                                                   Margin="0,0,10,0" />
+                                            <Entry x:Name="NewBudgetLimitEntry"
+                                                   Grid.Column="1"
+                                                   Placeholder="Limite du budget (optionnel)"
+                                                   BackgroundColor="Transparent"
+                                                   TextColor="#2C3E50"
+                                                   PlaceholderColor="#95A5A6"
+                                                   FontSize="16"
+                                                   Keyboard="Numeric" />
+                                        </Grid>
+                                    </Frame>
+                                    
+                                    <!-- Sélection des catégories pour le budget (si création) -->
+                                    <Frame x:Name="BudgetCategoriesFrame"
+                                           IsVisible="False"
+                                           BackgroundColor="#ECF0F1"
+                                           CornerRadius="10"
+                                           Padding="15,10"
+                                           HasShadow="False"
+                                           BorderColor="Transparent"
+                                           Margin="0,5,0,0">
+                                        <VerticalStackLayout Spacing="5">
+                                            <Label Text="Catégories associées au budget (optionnel)"
+                                                   FontSize="12"
+                                                   TextColor="#7F8C8D" />
+                                            <CollectionView x:Name="BudgetCategoriesCollectionView"
+                                                            HeightRequest="100">
+                                                <CollectionView.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Padding="5">
+                                                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                                            <Label Text="{Binding Categorie.NomCategorie}"
+                                                                   FontSize="14"
+                                                                   TextColor="#2C3E50"
+                                                                   Margin="30,0,0,0"
+                                                                   VerticalOptions="Center" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </CollectionView.ItemTemplate>
+                                            </CollectionView>
+                                        </VerticalStackLayout>
                                     </Frame>
                                 </VerticalStackLayout>
 

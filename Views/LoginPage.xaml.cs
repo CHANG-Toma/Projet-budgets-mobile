@@ -9,9 +9,11 @@ namespace Projet_Budget_M1.Views
     {
         public LoginPage()
         {
+            // Initialisation de la page de connexion
             InitializeComponent();
         }
 
+        // Fonction pour la connexion utilisateur
         private async void OnLoginClicked(object sender, EventArgs e)
         {
             var email = EmailEntry.Text?.Trim() ?? string.Empty;
@@ -47,11 +49,14 @@ namespace Projet_Budget_M1.Views
             }
         }
 
+        // Fonction pour la navigation vers la page d'inscription
         private async void OnSignUpTapped(object sender, EventArgs e)
         {
+            // Navigation vers la page d'inscription
             await Navigation.PushAsync(new RegisterPage());
         }
 
+        // Fonction pour vérifier si l'email est valide
         private bool IsValidEmail(string email)
         {
             try

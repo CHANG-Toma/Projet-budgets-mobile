@@ -79,7 +79,7 @@ namespace Projet_Budget_M1.Views
                 BudgetPicker.ItemsSource = _availableBudgets;
                 
                 // Sélectionner par défaut le budget du mois de la transaction s'il existe
-                var transactionMonth = new DateTime(DatePicker.Date.Year, DatePicker.Date.Month, 1);1
+                var transactionMonth = new DateTime(DatePicker.Date.Year, DatePicker.Date.Month, 1);
                 var budgetForMonth = _availableBudgets.FirstOrDefault(b => b.Mois == transactionMonth);
                 
                 if (budgetForMonth != null)

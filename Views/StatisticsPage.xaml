@@ -5,18 +5,185 @@
              Title="Statistiques"
              BackgroundColor="#F5F5F5">
 
-    <Grid RowDefinitions="*,Auto">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <ActivityIndicator Grid.Row="0"
+                           Grid.RowSpan="3"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="#3498DB"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center" />
+
         <!-- Main Content -->
-        <ScrollView Grid.Row="0">
-            <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="20" Padding="20">
-                <Label Text="📊" FontSize="60" HorizontalOptions="Center" />
-                <Label Text="Statistiques" FontSize="24" FontAttributes="Bold" TextColor="#2C3E50" HorizontalOptions="Center" />
-                <Label Text="Page en cours de développement" FontSize="16" TextColor="#7F8C8D" HorizontalOptions="Center" />
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,20,20,10" Spacing="18">
+                <Label Text="Statistiques"
+                       FontSize="28"
+                       FontAttributes="Bold"
+                       TextColor="#2C3E50" />
+                <Label Text="{Binding CurrentMonthLabel}"
+                       FontSize="14"
+                       TextColor="#7F8C8D" />
+
+                <!-- Resume -->
+                <Frame BackgroundColor="White"
+                       CornerRadius="16"
+                       Padding="18"
+                       HasShadow="True">
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" RowSpacing="10">
+                        <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="3">
+                            <Label Text="Depenses du mois" FontSize="13" TextColor="#7F8C8D" />
+                            <Label Text="{Binding CurrentMonthExpensesText}" FontSize="20" FontAttributes="Bold" TextColor="#E74C3C" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="3">
+                            <Label Text="Revenus du mois" FontSize="13" TextColor="#7F8C8D" />
+                            <Label Text="{Binding CurrentMonthIncomeText}" FontSize="20" FontAttributes="Bold" TextColor="#27AE60" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="3">
+                            <Label Text="Transactions du mois" FontSize="13" TextColor="#7F8C8D" />
+                            <Label Text="{Binding CurrentMonthTransactionsCountText}" FontSize="18" FontAttributes="Bold" TextColor="#2C3E50" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="3">
+                            <Label Text="Categorie principale" FontSize="13" TextColor="#7F8C8D" />
+                            <Label Text="{Binding TopCategoryText}" FontSize="16" FontAttributes="Bold" TextColor="#2C3E50" LineBreakMode="TailTruncation" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Frame>
+
+                <!-- Repartition categories -->
+                <Border BackgroundColor="Transparent"
+                        Stroke="#DDE3EA"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 16"
+                        Padding="18">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Top categories (mois courant)"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="#2C3E50" />
+
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding TopCategories}"
+                                             Spacing="10">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="Transparent"
+                                            Stroke="#DDE3EA"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 12"
+                                            Padding="12">
+                                        <VerticalStackLayout Spacing="8">
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                                <Border Grid.Column="0"
+                                                        WidthRequest="34"
+                                                        HeightRequest="34"
+                                                        StrokeThickness="0"
+                                                        StrokeShape="RoundRectangle 17"
+                                                        Padding="0"
+                                                        BackgroundColor="#EAF2F8"
+                                                        VerticalOptions="Center">
+                                                    <Label Text="{Binding Icon}"
+                                                           FontSize="16"
+                                                           HorizontalOptions="Center"
+                                                           VerticalOptions="Center" />
+                                                </Border>
+
+                                                <VerticalStackLayout Grid.Column="1" Spacing="1">
+                                                    <Label Text="{Binding Name}"
+                                                           FontSize="14"
+                                                           FontAttributes="Bold"
+                                                           TextColor="#2C3E50"
+                                                           LineBreakMode="TailTruncation" />
+                                                    <Label Text="{Binding ShareText}"
+                                                           FontSize="12"
+                                                           TextColor="#7F8C8D" />
+                                                </VerticalStackLayout>
+
+                                                <Label Grid.Column="2"
+                                                       Text="{Binding AmountText}"
+                                                       FontSize="13"
+                                                       FontAttributes="Bold"
+                                                       TextColor="#2C3E50"
+                                                       VerticalOptions="Center" />
+                                            </Grid>
+
+                                            <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="8">
+                                                <Grid Grid.Column="0"
+                                                      WidthRequest="220"
+                                                      HeightRequest="8"
+                                                      BackgroundColor="#ECF0F1"
+                                                      VerticalOptions="Center"
+                                                      HorizontalOptions="Start">
+                                                    <BoxView WidthRequest="{Binding BarWidth}"
+                                                             HeightRequest="8"
+                                                             Color="#3498DB"
+                                                             HorizontalOptions="Start"
+                                                             VerticalOptions="Center" />
+                                                </Grid>
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding ProgressText}"
+                                                       FontSize="11"
+                                                       TextColor="#7F8C8D"
+                                                       VerticalOptions="Center" />
+                                            </Grid>
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Evolution -->
+                <Frame BackgroundColor="White"
+                       CornerRadius="16"
+                       Padding="18"
+                       HasShadow="True">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Evolution des 6 derniers mois"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="#2C3E50" />
+
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding MonthlyTrend}"
+                                             Spacing="10">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="Auto,Auto,Auto" Margin="0,0,0,2">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding MonthShort}"
+                                               FontSize="14"
+                                               TextColor="#2C3E50"
+                                               WidthRequest="48"
+                                               VerticalOptions="Center" />
+                                        <Grid Grid.Column="1"
+                                              WidthRequest="220"
+                                              HeightRequest="8"
+                                              BackgroundColor="#ECF0F1"
+                                              VerticalOptions="Center"
+                                              HorizontalOptions="Start"
+                                              Margin="8,0">
+                                            <BoxView WidthRequest="{Binding BarWidth}"
+                                                     HeightRequest="8"
+                                                     Color="#2C3E50"
+                                                     HorizontalOptions="Start"
+                                                     VerticalOptions="Center" />
+                                        </Grid>
+                                        <Label Grid.Column="2"
+                                               Text="{Binding AmountText}"
+                                               FontSize="13"
+                                               TextColor="#7F8C8D"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Frame>
             </VerticalStackLayout>
         </ScrollView>
 
         <!-- Menu Footer -->
-        <Frame Grid.Row="1"
+        <Frame Grid.Row="2"
                BackgroundColor="White"
                CornerRadius="0"
                Padding="0"
@@ -81,7 +248,7 @@
                            HorizontalOptions="Center" />
                 </VerticalStackLayout>
 
-                <!-- Statistiques -->
+                <!-- Statistiques (actif) -->
                 <VerticalStackLayout Grid.Column="2"
                                      HorizontalOptions="Center"
                                      Spacing="4">
@@ -97,18 +264,20 @@
                                FontSize="36"
                                VerticalOptions="Center"
                                HorizontalOptions="Center"
-                               LineBreakMode="NoWrap" />
+                               LineBreakMode="NoWrap"
+                               TextColor="#3498DB" />
                         <Frame.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnStatisticsTapped" NumberOfTapsRequired="1" />
                         </Frame.GestureRecognizers>
                     </Frame>
                     <Label Text="Statistiques"
                            FontSize="12"
-                           TextColor="#7F8C8D"
+                           TextColor="#3498DB"
+                           FontAttributes="Bold"
                            HorizontalOptions="Center" />
                 </VerticalStackLayout>
 
-                <!-- Budget (actif) -->
+                <!-- Budget -->
                 <VerticalStackLayout Grid.Column="3"
                                      HorizontalOptions="Center"
                                      Spacing="4">
@@ -124,15 +293,14 @@
                                FontSize="36"
                                VerticalOptions="Center"
                                HorizontalOptions="Center"
-                               LineBreakMode="NoWrap"
-                               TextColor="#3498DB" />
+                               LineBreakMode="NoWrap" />
                         <Frame.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnBudgetTapped" NumberOfTapsRequired="1" />
                         </Frame.GestureRecognizers>
                     </Frame>
                     <Label Text="Budget"
                            FontSize="12"
-                           TextColor="#3498DB"
+                           TextColor="#7F8C8D"
                            HorizontalOptions="Center" />
                 </VerticalStackLayout>
 

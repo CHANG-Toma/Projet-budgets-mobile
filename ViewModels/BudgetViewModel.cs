@@ -461,7 +461,10 @@ namespace Projet_Budget_M1.ViewModels
         private async Task OnEditBudget()
         {
             var placeholder = LimiteCategorie > 0 ? LimiteCategorie.ToString("F2") : "0";
-            var result = await Application.Current.MainPage.DisplayPromptAsync(
+            var page = Application.Current?.Windows.FirstOrDefault()?.Page ?? Application.Current?.MainPage;
+            if (page is null) return;
+
+            var result = await page.DisplayPromptAsync(
                 $"Budget - {NomCategorie}",
                 "Entrez le budget mensuel pour cette catégorie:",
                 "Enregistrer",
@@ -470,10 +473,30 @@ namespace Projet_Budget_M1.ViewModels
                 keyboard: Keyboard.Numeric
             );
 
-            if (!string.IsNullOrWhiteSpace(result) && double.TryParse(result.Replace(",", "."), out var newLimit))
+            if (string.IsNullOrWhiteSpace(result))
             {
-                await _parentViewModel.UpdateCategoryBudgetAsync(NomCategorie, newLimit);
+                return;
             }
+
+            var normalized = result.Trim().Replace(" ", "").Replace(",", ".");
+            if (!double.TryParse(
+                    normalized,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out var newLimit))
+            {
+                await page.DisplayAlert("Saisie invalide", "Entre un montant valide (ex: 250 ou 250,50).", "OK");
+                return;
+            }
+
+            if (newLimit < 0)
+            {
+                await page.DisplayAlert("Saisie invalide", "Le budget ne peut pas etre negatif.", "OK");
+                return;
+            }
+
+            await _parentViewModel.UpdateCategoryBudgetAsync(NomCategorie, newLimit);
+            await page.DisplayAlert("Succes", $"Budget enregistre pour '{NomCategorie}'.", "OK");
         }
 
         private async Task OnDeleteCategory()

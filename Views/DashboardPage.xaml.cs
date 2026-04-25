@@ -1,4 +1,6 @@
 using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 using Microsoft.Maui.Storage;
 using Projet_Budget_M1.Models;
 using Projet_Budget_M1.Services;
@@ -7,12 +9,14 @@ namespace Projet_Budget_M1.Views
 {
     public partial class DashboardPage : ContentPage
     {
+        private readonly ObservableCollection<Transaction> _recentTransactions = new();
         private string _currentUserEmail = string.Empty;
 
         public DashboardPage()
         {
             InitializeComponent();
             _currentUserEmail = Preferences.Default.Get("userEmail", "");
+            RecentTransactionsList.ItemsSource = _recentTransactions;
             InitializeTransactionForm();
         }
 
@@ -29,6 +33,7 @@ namespace Projet_Budget_M1.Views
         protected override async void OnAppearing()
         {
             base.OnAppearing();
+            _currentUserEmail = Preferences.Default.Get("userEmail", string.Empty);
             var email = Preferences.Default.Get("userEmail", string.Empty);
             if (!string.IsNullOrWhiteSpace(email))
             {
@@ -44,16 +49,75 @@ namespace Projet_Budget_M1.Views
             {
                 GreetingLabel.Text = "Bonjour";
             }
+
+            await LoadDashboardDataAsync();
+        }
+
+        private async Task LoadDashboardDataAsync()
+        {
+            if (string.IsNullOrWhiteSpace(_currentUserEmail))
+            {
+                TotalBalanceLabel.Text = "0.00 €";
+                TotalExpensesLabel.Text = "0.00 €";
+                BudgetSpentLabel.Text = "0.00 € / 0.00 €";
+                BudgetProgressBar.Progress = 0;
+                _recentTransactions.Clear();
+                return;
+            }
+
+            try
+            {
+                var now = DateTime.Now;
+                var transactions = await DbService.GetTransactionsAsync(_currentUserEmail);
+                var monthTransactions = transactions
+                    .Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month)
+                    .ToList();
+                var totalExpenses = monthTransactions.Sum(t => Math.Abs(t.Amount));
+                var currentMonthIncome = await DbService.GetTotalRevenusAsync(_currentUserEmail, now);
+                double budgetLimit = 0;
+                try
+                {
+                    var monthBudgets = await DbService.GetCategoryBudgetsAsync(_currentUserEmail, now);
+                    budgetLimit = monthBudgets.Sum(b => b.LimiteCategorie > 0 ? b.LimiteCategorie : 0);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur calcul budget accueil: {ex.Message}");
+                }
+
+                TotalBalanceLabel.Text = $"{(currentMonthIncome - totalExpenses):F2} €";
+                TotalExpensesLabel.Text = $"{totalExpenses:F2} €";
+                BudgetSpentLabel.Text = $"{totalExpenses:F2} € / {budgetLimit:F2} €";
+                BudgetProgressBar.Progress = budgetLimit > 0
+                    ? Math.Min(totalExpenses / budgetLimit, 1d)
+                    : 0d;
+
+                var recent = transactions
+                    .OrderByDescending(t => t.Date)
+                    .ThenByDescending(t => t.Id)
+                    .Take(5)
+                    .ToList();
+
+                _recentTransactions.Clear();
+                foreach (var item in recent)
+                {
+                    _recentTransactions.Add(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur LoadDashboardDataAsync: {ex.Message}");
+            }
         }
 
         private async void OnViewBudgetDetailsTapped(object sender, EventArgs e)
         {
-            await DisplayAlert("Budget", "Afficher les détails du budget", "OK");
+            await Shell.Current.GoToAsync("//BudgetPage");
         }
 
         private async void OnViewAllTransactionsTapped(object sender, EventArgs e)
         {
-            await DisplayAlert("Transactions", "Afficher toutes les transactions", "OK");
+            await Shell.Current.GoToAsync("//TransactionsPage");
         }
 
         private void OnAddTransactionClicked(object sender, EventArgs e)
@@ -160,6 +224,8 @@ namespace Projet_Budget_M1.Views
                 
                 // Réinitialiser le formulaire
                 ResetTransactionForm();
+
+                await LoadDashboardDataAsync();
             }
             catch (Exception ex)
             {

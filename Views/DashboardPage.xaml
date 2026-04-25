@@ -53,7 +53,8 @@
                             <Label Text="Solde total"
                                    FontSize="14"
                                    TextColor="#7F8C8D" />
-                            <Label Text="2450.50 €"
+                            <Label x:Name="TotalBalanceLabel"
+                                   Text="0.00 €"
                                    FontSize="36"
                                    FontAttributes="Bold"
                                    TextColor="#2C3E50" />
@@ -88,7 +89,8 @@
                                    TextColor="#E74C3C"
                                    FontAttributes="Bold" />
                         </HorizontalStackLayout>
-                        <Label Text="1049.50 €"
+                        <Label x:Name="TotalExpensesLabel"
+                               Text="0.00 €"
                                FontSize="22"
                                FontAttributes="Bold"
                                TextColor="#E74C3C" />
@@ -120,11 +122,13 @@
                         <Label Text="Dépensé"
                                FontSize="14"
                                TextColor="#7F8C8D" />
-                        <Label Text="1049.50 € / 3000.00 €"
+                        <Label x:Name="BudgetSpentLabel"
+                               Text="0.00 € / 0.00 €"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="#2C3E50" />
-                        <ProgressBar Progress="0.35"
+                        <ProgressBar x:Name="BudgetProgressBar"
+                                     Progress="0"
                                      ProgressColor="#3498DB"
                                      BackgroundColor="#ECF0F1"
                                      HeightRequest="8" />
@@ -150,63 +154,41 @@
                 </Grid>
 
                 <!-- Transactions List -->
-                <VerticalStackLayout Spacing="10">
-                    <!-- Transaction 1 -->
-                    <Frame BackgroundColor="White"
-                           CornerRadius="10"
-                           Padding="15"
-                           HasShadow="True">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <VerticalStackLayout Grid.Column="0">
-                                <Label Text="Salaire"
-                                       FontSize="16"
-                                       FontAttributes="Bold"
-                                       TextColor="#2C3E50" />
-                                <Label Text="Revenu"
-                                       FontSize="13"
-                                       TextColor="#7F8C8D" />
-                            </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Column="1" HorizontalOptions="End">
-                                <Label Text="+3500.00 €"
-                                       FontSize="16"
-                                       FontAttributes="Bold"
-                                       TextColor="#27AE60" />
-                                <Label Text="15/10"
-                                       FontSize="13"
-                                       TextColor="#7F8C8D"
-                                       HorizontalTextAlignment="End" />
-                            </VerticalStackLayout>
-                        </Grid>
-                    </Frame>
-
-                    <!-- Transaction 2 -->
-                    <Frame BackgroundColor="White"
-                           CornerRadius="10"
-                           Padding="15"
-                           HasShadow="True">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <VerticalStackLayout Grid.Column="0">
-                                <Label Text="Courses"
-                                       FontSize="16"
-                                       FontAttributes="Bold"
-                                       TextColor="#2C3E50" />
-                                <Label Text="Alimentation"
-                                       FontSize="13"
-                                       TextColor="#7F8C8D" />
-                            </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Column="1" HorizontalOptions="End">
-                                <Label Text="-85.50 €"
-                                       FontSize="16"
-                                       FontAttributes="Bold"
-                                       TextColor="#E74C3C" />
-                                <Label Text="16/10"
-                                       FontSize="13"
-                                       TextColor="#7F8C8D"
-                                       HorizontalTextAlignment="End" />
-                            </VerticalStackLayout>
-                        </Grid>
-                    </Frame>
-                </VerticalStackLayout>
+                <CollectionView x:Name="RecentTransactionsList"
+                                HeightRequest="260"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame BackgroundColor="White"
+                                   CornerRadius="10"
+                                   Padding="15"
+                                   HasShadow="True"
+                                   Margin="0,0,0,10">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <VerticalStackLayout Grid.Column="0">
+                                        <Label Text="{Binding Title}"
+                                               FontSize="16"
+                                               FontAttributes="Bold"
+                                               TextColor="#2C3E50" />
+                                        <Label Text="{Binding Category}"
+                                               FontSize="13"
+                                               TextColor="#7F8C8D" />
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="1" HorizontalOptions="End">
+                                        <Label Text="{Binding Amount, StringFormat='-{0:F2} €'}"
+                                               FontSize="16"
+                                               FontAttributes="Bold"
+                                               TextColor="#E74C3C" />
+                                        <Label Text="{Binding Date, StringFormat='{0:dd/MM}'}"
+                                               FontSize="13"
+                                               TextColor="#7F8C8D"
+                                               HorizontalTextAlignment="End" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
 
             </VerticalStackLayout>
         </ScrollView>

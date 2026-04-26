@@ -44,8 +44,8 @@
                             <Label Text="{Binding CurrentMonthTransactionsCountText}" FontSize="18" FontAttributes="Bold" TextColor="#2C3E50" />
                         </VerticalStackLayout>
                         <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="3">
-                            <Label Text="Categorie principale" FontSize="13" TextColor="#7F8C8D" />
-                            <Label Text="{Binding TopCategoryText}" FontSize="16" FontAttributes="Bold" TextColor="#2C3E50" LineBreakMode="TailTruncation" />
+                            <Label Text="Salaire (categorie)" FontSize="13" TextColor="#7F8C8D" />
+                            <Label Text="{Binding SalaryCategoryAmountText}" FontSize="16" FontAttributes="Bold" TextColor="#2C3E50" LineBreakMode="TailTruncation" />
                         </VerticalStackLayout>
                     </Grid>
                 </Frame>
@@ -62,74 +62,10 @@
                                FontAttributes="Bold"
                                TextColor="#2C3E50" />
 
-                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding TopCategories}"
-                                             Spacing="10">
-                            <BindableLayout.ItemTemplate>
-                                <DataTemplate>
-                                    <Border BackgroundColor="Transparent"
-                                            Stroke="#DDE3EA"
-                                            StrokeThickness="1"
-                                            StrokeShape="RoundRectangle 12"
-                                            Padding="12">
-                                        <VerticalStackLayout Spacing="8">
-                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                                                <Border Grid.Column="0"
-                                                        WidthRequest="34"
-                                                        HeightRequest="34"
-                                                        StrokeThickness="0"
-                                                        StrokeShape="RoundRectangle 17"
-                                                        Padding="0"
-                                                        BackgroundColor="#EAF2F8"
-                                                        VerticalOptions="Center">
-                                                    <Label Text="{Binding Icon}"
-                                                           FontSize="16"
-                                                           HorizontalOptions="Center"
-                                                           VerticalOptions="Center" />
-                                                </Border>
-
-                                                <VerticalStackLayout Grid.Column="1" Spacing="1">
-                                                    <Label Text="{Binding Name}"
-                                                           FontSize="14"
-                                                           FontAttributes="Bold"
-                                                           TextColor="#2C3E50"
-                                                           LineBreakMode="TailTruncation" />
-                                                    <Label Text="{Binding ShareText}"
-                                                           FontSize="12"
-                                                           TextColor="#7F8C8D" />
-                                                </VerticalStackLayout>
-
-                                                <Label Grid.Column="2"
-                                                       Text="{Binding AmountText}"
-                                                       FontSize="13"
-                                                       FontAttributes="Bold"
-                                                       TextColor="#2C3E50"
-                                                       VerticalOptions="Center" />
-                                            </Grid>
-
-                                            <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="8">
-                                                <Grid Grid.Column="0"
-                                                      WidthRequest="220"
-                                                      HeightRequest="8"
-                                                      BackgroundColor="#ECF0F1"
-                                                      VerticalOptions="Center"
-                                                      HorizontalOptions="Start">
-                                                    <BoxView WidthRequest="{Binding BarWidth}"
-                                                             HeightRequest="8"
-                                                             Color="#3498DB"
-                                                             HorizontalOptions="Start"
-                                                             VerticalOptions="Center" />
-                                                </Grid>
-                                                <Label Grid.Column="1"
-                                                       Text="{Binding ProgressText}"
-                                                       FontSize="11"
-                                                       TextColor="#7F8C8D"
-                                                       VerticalOptions="Center" />
-                                            </Grid>
-                                        </VerticalStackLayout>
-                                    </Border>
-                                </DataTemplate>
-                            </BindableLayout.ItemTemplate>
-                        </VerticalStackLayout>
+                        <Label Text="{Binding TopCategoriesSummaryText}"
+                               FontSize="14"
+                               TextColor="#2C3E50"
+                               LineBreakMode="WordWrap" />
                     </VerticalStackLayout>
                 </Border>
 
@@ -144,33 +80,39 @@
                                FontAttributes="Bold"
                                TextColor="#2C3E50" />
 
+                        <Label Text="{Binding MonthlyTrendSummaryText}"
+                               FontSize="14"
+                               TextColor="#2C3E50"
+                               LineBreakMode="WordWrap" />
+
+                        <!-- Graphique barres -->
                         <VerticalStackLayout BindableLayout.ItemsSource="{Binding MonthlyTrend}"
-                                             Spacing="10">
+                                             Spacing="8">
                             <BindableLayout.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid ColumnDefinitions="Auto,Auto,Auto" Margin="0,0,0,2">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
                                         <Label Grid.Column="0"
                                                Text="{Binding MonthShort}"
-                                               FontSize="14"
+                                               FontSize="13"
                                                TextColor="#2C3E50"
-                                               WidthRequest="48"
+                                               WidthRequest="58"
                                                VerticalOptions="Center" />
+
                                         <Grid Grid.Column="1"
-                                              WidthRequest="220"
-                                              HeightRequest="8"
+                                              HeightRequest="10"
                                               BackgroundColor="#ECF0F1"
                                               VerticalOptions="Center"
-                                              HorizontalOptions="Start"
-                                              Margin="8,0">
+                                              HorizontalOptions="Fill">
                                             <BoxView WidthRequest="{Binding BarWidth}"
-                                                     HeightRequest="8"
-                                                     Color="#2C3E50"
+                                                     HeightRequest="10"
+                                                     Color="#3498DB"
                                                      HorizontalOptions="Start"
                                                      VerticalOptions="Center" />
                                         </Grid>
+
                                         <Label Grid.Column="2"
                                                Text="{Binding AmountText}"
-                                               FontSize="13"
+                                               FontSize="12"
                                                TextColor="#7F8C8D"
                                                VerticalOptions="Center" />
                                     </Grid>

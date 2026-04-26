@@ -17,6 +17,9 @@ public partial class StatisticsPage : ContentPage, INotifyPropertyChanged
     private double _currentMonthIncome;
     private int _currentMonthTransactionsCount;
     private string _topCategoryText = "Aucune";
+    private double _salaryCategoryAmount;
+    private string _topCategoriesSummaryText = "Aucune donnée disponible";
+    private string _monthlyTrendSummaryText = "Aucune donnée disponible";
 
     public ObservableCollection<CategoryStatItem> TopCategories { get; } = new();
     public ObservableCollection<MonthlyTrendItem> MonthlyTrend { get; } = new();
@@ -75,9 +78,32 @@ public partial class StatisticsPage : ContentPage, INotifyPropertyChanged
         set => SetProperty(ref _topCategoryText, value);
     }
 
+    public double SalaryCategoryAmount
+    {
+        get => _salaryCategoryAmount;
+        set
+        {
+            if (SetProperty(ref _salaryCategoryAmount, value))
+            {
+                OnPropertyChanged(nameof(SalaryCategoryAmountText));
+            }
+        }
+    }
+
     public string CurrentMonthExpensesText => $"{CurrentMonthExpenses:F2} EUR";
     public string CurrentMonthIncomeText => $"{CurrentMonthIncome:F2} EUR";
     public string CurrentMonthTransactionsCountText => CurrentMonthTransactionsCount.ToString(CultureInfo.InvariantCulture);
+    public string SalaryCategoryAmountText => $"{SalaryCategoryAmount:F2} EUR";
+    public string TopCategoriesSummaryText
+    {
+        get => _topCategoriesSummaryText;
+        set => SetProperty(ref _topCategoriesSummaryText, value);
+    }
+    public string MonthlyTrendSummaryText
+    {
+        get => _monthlyTrendSummaryText;
+        set => SetProperty(ref _monthlyTrendSummaryText, value);
+    }
 
     public StatisticsPage()
     {
@@ -106,19 +132,47 @@ public partial class StatisticsPage : ContentPage, INotifyPropertyChanged
             var now = DateTime.Now;
             CurrentMonthLabel = now.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
 
-            var transactions = await DbService.GetTransactionsAsync(_currentUserEmail);
+            List<Transaction> transactions;
+            try
+            {
+                transactions = await DbService.GetTransactionsAsync(_currentUserEmail);
+            }
+            catch
+            {
+                transactions = new List<Transaction>();
+            }
+
             var monthTransactions = transactions
                 .Where(t => t.Date.Year == now.Year && t.Date.Month == now.Month)
                 .ToList();
             var monthExpenseTransactions = monthTransactions
                 .Where(t => !IsIncomeTransaction(t))
                 .ToList();
+            var monthIncomeTransactions = monthTransactions
+                .Where(IsIncomeTransaction)
+                .ToList();
 
             CurrentMonthTransactionsCount = monthTransactions.Count;
             CurrentMonthExpenses = monthExpenseTransactions.Sum(t => Math.Abs(t.Amount));
-            CurrentMonthIncome = await DbService.GetTotalRevenusAsync(_currentUserEmail, now);
+            // Revenus = table revenu + transactions detectees comme salaire/revenu.
+            double revenusFromTable = 0;
+            try
+            {
+                revenusFromTable = await DbService.GetTotalRevenusAsync(_currentUserEmail, now);
+            }
+            catch
+            {
+                revenusFromTable = 0;
+            }
+            var revenusFromTransactions = monthIncomeTransactions.Sum(t => Math.Abs(t.Amount));
+            CurrentMonthIncome = revenusFromTable + revenusFromTransactions;
+            SalaryCategoryAmount = monthTransactions
+                .Where(IsIncomeTransaction)
+                .Sum(t => Math.Abs(t.Amount));
 
-            var grouped = monthExpenseTransactions
+            // Top categories: utiliser toutes les transactions du mois
+            // pour eviter un ecran vide si les donnees sont principalement "salaire/revenu".
+            var grouped = monthTransactions
                 .GroupBy(t => string.IsNullOrWhiteSpace(t.Category) ? "Autres" : t.Category.Trim())
                 .Select(g => new
                 {
@@ -132,26 +186,10 @@ public partial class StatisticsPage : ContentPage, INotifyPropertyChanged
                 ? $"{top.Name} ({top.Amount:F2} EUR)"
                 : "Aucune";
 
-            TopCategories.Clear();
-            var maxCategory = grouped.Count > 0 ? grouped.Max(x => x.Amount) : 0d;
-            var totalCategoryAmount = grouped.Sum(x => x.Amount);
-            const double maxCategoryBarWidth = 220d;
-            foreach (var item in grouped.Take(5))
-            {
-                var share = totalCategoryAmount > 0 ? (item.Amount / totalCategoryAmount) * 100d : 0d;
-                var progress = maxCategory > 0 ? Math.Min(item.Amount / maxCategory, 1d) : 0d;
-                TopCategories.Add(new CategoryStatItem
-                {
-                    Name = item.Name,
-                    Amount = item.Amount,
-                    Progress = progress,
-                    SharePercentage = share,
-                    Icon = GetCategoryIcon(item.Name),
-                    BarWidth = progress * maxCategoryBarWidth
-                });
-            }
+            TopCategoriesSummaryText = grouped.Count == 0
+                ? "Aucune catégorie pour le mois en cours."
+                : string.Join("\n", grouped.Take(5).Select((x, i) => $"{i + 1}. {x.Name}: {x.Amount:F2} EUR"));
 
-            MonthlyTrend.Clear();
             var months = Enumerable.Range(0, 6)
                 .Select(i => new DateTime(now.Year, now.Month, 1).AddMonths(-5 + i))
                 .ToList();
@@ -160,7 +198,6 @@ public partial class StatisticsPage : ContentPage, INotifyPropertyChanged
             {
                 var amount = transactions
                     .Where(t => t.Date.Year == monthStart.Year && t.Date.Month == monthStart.Month)
-                    .Where(t => !IsIncomeTransaction(t))
                     .Sum(t => Math.Abs(t.Amount));
                 return new
                 {
@@ -169,6 +206,7 @@ public partial class StatisticsPage : ContentPage, INotifyPropertyChanged
                 };
             }).ToList();
 
+            MonthlyTrend.Clear();
             var maxMonthly = perMonth.Count > 0 ? perMonth.Max(x => x.Amount) : 0d;
             const double maxMonthBarWidth = 220d;
             foreach (var item in perMonth)
@@ -182,10 +220,17 @@ public partial class StatisticsPage : ContentPage, INotifyPropertyChanged
                     BarWidth = progress * maxMonthBarWidth
                 });
             }
+
+            MonthlyTrendSummaryText = perMonth.Count == 0
+                ? "Aucune donnée sur les 6 derniers mois."
+                : string.Join("\n", perMonth.Select(x => $"{x.Month:MMM yyyy}: {x.Amount:F2} EUR"));
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Erreur LoadStatisticsAsync: {ex.Message}");
+            // Fallback visuel pour eviter un ecran vide en cas d'erreur partielle.
+            TopCategoriesSummaryText = "Impossible de calculer les categories (voir logs).";
+            MonthlyTrendSummaryText = "Impossible de calculer l'evolution (voir logs).";
         }
         finally
         {
@@ -247,12 +292,20 @@ public partial class StatisticsPage : ContentPage, INotifyPropertyChanged
 
     private static bool IsIncomeTransaction(Transaction t)
     {
-        var title = ((string?)t.Title ?? string.Empty).ToLowerInvariant();
-        var category = ((string?)t.Category ?? string.Empty).ToLowerInvariant();
-        return title.Contains("salaire")
-               || title.Contains("revenu")
-               || category.Contains("salaire")
-               || category.Contains("revenu");
+        var title = ((string?)t.Title ?? string.Empty).Trim();
+        var category = ((string?)t.Category ?? string.Empty).Trim();
+        var normalizedTitle = title.ToLowerInvariant();
+        var normalizedCategory = category.ToLowerInvariant();
+
+        // Cas demande par l'utilisateur: description de type "Salaire - Autres".
+        // On reconstruit un equivalent de description a partir des champs parsés.
+        var normalizedDescriptionLike = $"{normalizedTitle} - {normalizedCategory}";
+
+        return normalizedTitle.Contains("salaire")
+               || normalizedTitle.Contains("revenu")
+               || normalizedCategory.Contains("salaire")
+               || normalizedCategory.Contains("revenu")
+               || normalizedDescriptionLike.Contains("salaire -");
     }
 }
 

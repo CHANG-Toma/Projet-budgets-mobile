@@ -354,20 +354,49 @@ public static class DbService
         var user = await GetUserByEmailAsync(ownerEmail);
         if (user == null) return null;
         
-        var currentMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        var now = DateTime.Now;
         
         await using var cmd = connection.CreateCommand();
         cmd.CommandText = @"SELECT limite FROM budgetmensuel 
                             WHERE id_utilisateur=@id_utilisateur 
-                            AND mois=@mois 
+                            AND YEAR(mois)=@year
+                            AND MONTH(mois)=@month
+                            ORDER BY id_budget DESC
                             LIMIT 1";
         cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
-        cmd.Parameters.AddWithValue("@mois", currentMonth);
+        cmd.Parameters.AddWithValue("@year", now.Year);
+        cmd.Parameters.AddWithValue("@month", now.Month);
         
         var result = await cmd.ExecuteScalarAsync();
         if (result == null || result == DBNull.Value)
             return null;
         
+        return Convert.ToDecimal(result);
+    }
+
+    public static async Task<decimal?> GetMonthlyBudgetLimitAsync(string ownerEmail, DateTime month)
+    {
+        await using var connection = await OpenConnectionAsync();
+
+        var user = await GetUserByEmailAsync(ownerEmail);
+        if (user == null) return null;
+
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"SELECT limite
+                            FROM budgetmensuel
+                            WHERE id_utilisateur = @id_utilisateur
+                              AND YEAR(mois) = @year
+                              AND MONTH(mois) = @month
+                            ORDER BY id_budget DESC
+                            LIMIT 1";
+        cmd.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
+        cmd.Parameters.AddWithValue("@year", month.Year);
+        cmd.Parameters.AddWithValue("@month", month.Month);
+
+        var result = await cmd.ExecuteScalarAsync();
+        if (result == null || result == DBNull.Value)
+            return null;
+
         return Convert.ToDecimal(result);
     }
 
@@ -430,10 +459,17 @@ public static class DbService
         
         var moisBudget = new DateTime(mois.Year, mois.Month, 1);
         
-        // Vérifier si un budget existe déjà pour ce mois
+        // Vérifier si un budget existe déjà pour ce mois (comparaison mois/annee robuste)
         await using var cmdCheck = connection.CreateCommand();
-        cmdCheck.CommandText = "SELECT id_budget FROM budgetmensuel WHERE mois = @mois AND id_utilisateur = @id_utilisateur LIMIT 1";
-        cmdCheck.Parameters.AddWithValue("@mois", moisBudget);
+        cmdCheck.CommandText = @"SELECT id_budget
+                                 FROM budgetmensuel
+                                 WHERE id_utilisateur = @id_utilisateur
+                                   AND YEAR(mois) = @year
+                                   AND MONTH(mois) = @month
+                                 ORDER BY id_budget DESC
+                                 LIMIT 1";
+        cmdCheck.Parameters.AddWithValue("@year", moisBudget.Year);
+        cmdCheck.Parameters.AddWithValue("@month", moisBudget.Month);
         cmdCheck.Parameters.AddWithValue("@id_utilisateur", user.IdUtilisateur);
         
         var existingId = await cmdCheck.ExecuteScalarAsync();

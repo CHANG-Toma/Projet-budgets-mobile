@@ -53,7 +53,7 @@
                     <!-- Carte Salaire -->
                     <Frame BackgroundColor="White" CornerRadius="20" Padding="25" HasShadow="True">
                         <VerticalStackLayout Spacing="15">
-                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <Grid ColumnDefinitions="*" ColumnSpacing="10">
                                 <VerticalStackLayout Grid.Column="0" Spacing="5">
                                     <Label Text="💰 Salaire mensuel" FontSize="14" TextColor="#7F8C8D" />
                                     <Label Text="{Binding SalaryText}" 
@@ -61,15 +61,6 @@
                                            FontAttributes="Bold" 
                                            TextColor="#2C3E50" />
                                 </VerticalStackLayout>
-                                <Button Grid.Column="1" 
-                                        Text="✏️" 
-                                        FontSize="18" 
-                                        BackgroundColor="Transparent" 
-                                        TextColor="#3498DB" 
-                                        Padding="8" 
-                                        WidthRequest="40" 
-                                        HeightRequest="40"
-                                        Command="{Binding EditSalaryCommand}" />
                             </Grid>
                         </VerticalStackLayout>
                     </Frame>
@@ -77,11 +68,12 @@
                     <!-- Carte Budget Total -->
                     <Frame BackgroundColor="White" CornerRadius="20" Padding="25" HasShadow="True">
                         <VerticalStackLayout Spacing="15">
-                            <Grid ColumnDefinitions="*,*" ColumnSpacing="20">
+                            <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="20">
                                 <!-- Budget total -->
                                 <VerticalStackLayout Grid.Column="0" Spacing="5">
                                     <Label Text="Budget total" FontSize="14" TextColor="#7F8C8D" />
-                                    <Label Text="{Binding TotalBudgetText}" 
+                                    <Label x:Name="BudgetTotalValueLabel"
+                                           Text="{Binding TotalBudgetText}" 
                                            FontSize="24" 
                                            FontAttributes="Bold" 
                                            TextColor="#2C3E50" />
@@ -89,12 +81,21 @@
                                 <!-- Dépensé -->
                                 <VerticalStackLayout Grid.Column="1" Spacing="5" HorizontalOptions="End">
                                     <Label Text="Dépensé" FontSize="14" TextColor="#7F8C8D" HorizontalTextAlignment="End" />
-                                    <Label Text="{Binding TotalSpentText}" 
+                                    <Label x:Name="BudgetSpentValueLabel"
+                                           Text="{Binding TotalSpentText}" 
                                            FontSize="24" 
                                            FontAttributes="Bold" 
                                            TextColor="#E74C3C" 
                                            HorizontalTextAlignment="End" />
                                 </VerticalStackLayout>
+                                <Button Grid.Column="2"
+                                        Text="✏️"
+                                        FontSize="18"
+                                        BackgroundColor="Transparent"
+                                        TextColor="#3498DB"
+                                        WidthRequest="40"
+                                        HeightRequest="40"
+                                        Clicked="OnSetMonthlyBudgetClicked" />
                             </Grid>
                             
                             <!-- Épargne -->
@@ -179,7 +180,7 @@
                                         <VerticalStackLayout Spacing="12">
                                             
                                             <!-- Ligne 1: Nom + icône + boutons -->
-                                            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="5">
+                                            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="5">
                                                 <Label Grid.Column="0" 
                                                        Text="{Binding Icone}" 
                                                        FontSize="24" 
@@ -191,16 +192,6 @@
                                                        TextColor="#2C3E50" 
                                                        VerticalOptions="Center" />
                                                 <Button Grid.Column="2" 
-                                                        Text="💰" 
-                                                        FontSize="16" 
-                                                        BackgroundColor="Transparent" 
-                                                        TextColor="#3498DB" 
-                                                        Padding="5" 
-                                                        WidthRequest="35" 
-                                                        HeightRequest="35"
-                                                        Command="{Binding EditBudgetCommand}" 
-                                                        ToolTipProperties.Text="Modifier le budget" />
-                                                <Button Grid.Column="3" 
                                                         Text="✏️" 
                                                         FontSize="14" 
                                                         BackgroundColor="Transparent" 
@@ -210,7 +201,7 @@
                                                         HeightRequest="35"
                                                         Command="{Binding EditCategoryNameCommand}" 
                                                         ToolTipProperties.Text="Modifier le nom" />
-                                                <Button Grid.Column="4" 
+                                                <Button Grid.Column="3" 
                                                         Text="🗑️" 
                                                         FontSize="14" 
                                                         BackgroundColor="Transparent" 

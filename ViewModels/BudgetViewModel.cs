@@ -127,12 +127,18 @@ namespace Projet_Budget_M1.ViewModels
 
         public async Task InitializeAsync()
         {
-            await LoadBudgetDataAsync();
+            await LoadBudgetDataAsync(showAlerts: true);
         }
 
-        private async Task LoadBudgetDataAsync()
+        private async Task LoadBudgetDataAsync(bool showAlerts = true)
         {
-            if (string.IsNullOrWhiteSpace(_currentUserEmail)) return;
+            // Meme logique que Dashboard: toujours revalider l'email courant
+            // pour eviter les valeurs stale si le ViewModel a ete instancie avant login.
+            _currentUserEmail = Preferences.Default.Get("userEmail", string.Empty);
+            if (string.IsNullOrWhiteSpace(_currentUserEmail))
+            {
+                return;
+            }
 
             IsLoading = true;
             try
@@ -146,13 +152,41 @@ namespace Projet_Budget_M1.ViewModels
                 // Charger le total des revenus (salaire + revenus supplémentaires)
                 Salary = await DbService.GetTotalRevenusAsync(_currentUserEmail, _currentMonth);
 
-                // Charger les budgets par catégorie
+                // Budget mensuel simple (meme logique que l'accueil pour le mois courant)
+                decimal? monthlyBudgetLimit;
+                var now = DateTime.Now;
+                if (_currentMonth.Year == now.Year && _currentMonth.Month == now.Month)
+                {
+                    // Exactement la meme source que la page Accueil.
+                    monthlyBudgetLimit = await DbService.GetCurrentMonthBudgetLimitAsync(_currentUserEmail);
+                }
+                else
+                {
+                    // Navigation sur un autre mois.
+                    monthlyBudgetLimit = await DbService.GetMonthlyBudgetLimitAsync(_currentUserEmail, _currentMonth);
+                }
+
+                TotalBudget = monthlyBudgetLimit.HasValue ? Convert.ToDouble(monthlyBudgetLimit.Value) : 0;
+
+                // Meme logique que la page Accueil pour les depenses:
+                // montants negatifs du mois (en valeur absolue).
+                var transactions = await DbService.GetTransactionsAsync(_currentUserEmail);
+                var monthStart = new DateTime(_currentMonth.Year, _currentMonth.Month, 1);
+                var monthEnd = monthStart.AddMonths(1);
+                double spent = 0;
+                foreach (var transaction in transactions)
+                {
+                    if (transaction.Date >= monthStart && transaction.Date < monthEnd && transaction.Amount < 0)
+                    {
+                        spent += Math.Abs(transaction.Amount);
+                    }
+                }
+                TotalSpent = spent;
+
+                // Charger les budgets/catégories pour la liste détaillée
                 var budgets = await DbService.GetCategoryBudgetsAsync(_currentUserEmail, _currentMonth);
                 System.Diagnostics.Debug.WriteLine($"LoadBudgetDataAsync: {budgets.Count} budgets chargés");
 
-                // Calculer les totaux (seulement pour les budgets définis > 0)
-                TotalBudget = budgets.Where(b => b.LimiteCategorie > 0).Sum(b => b.LimiteCategorie);
-                TotalSpent = budgets.Sum(b => Math.Abs(b.Depense));
                 Remaining = TotalBudget - TotalSpent;
                 
                 // Calculer l'épargne = salaire - total des budgets alloués
@@ -185,7 +219,10 @@ namespace Projet_Budget_M1.ViewModels
                     Categories.Add(categoryVM);
 
                     // Vérifier les alertes
-                    await CheckAndShowAlert(categoryVM);
+                    if (showAlerts)
+                    {
+                        await CheckAndShowAlert(categoryVM);
+                    }
                 }
             }
             catch (Exception ex)
@@ -239,9 +276,26 @@ namespace Projet_Budget_M1.ViewModels
             await LoadBudgetDataAsync();
         }
 
-        private async Task AddCategoryAsync(string categoryName)
+        public async Task AddCategoryAsync(string categoryName)
         {
             if (string.IsNullOrWhiteSpace(categoryName)) return;
+            if (string.IsNullOrWhiteSpace(_currentUserEmail))
+            {
+                _currentUserEmail = Preferences.Default.Get("userEmail", "");
+                if (string.IsNullOrWhiteSpace(_currentUserEmail))
+                {
+                    var page = GetActivePage();
+                    if (page != null)
+                    {
+                        await page.DisplayAlert(
+                            "Session invalide",
+                            "Utilisateur non connecte. Reconnectez-vous puis reessayez.",
+                            "OK"
+                        );
+                    }
+                    return;
+                }
+            }
 
             try
             {
@@ -250,12 +304,21 @@ namespace Projet_Budget_M1.ViewModels
             }
             catch (Exception ex)
             {
-                await Application.Current.MainPage.DisplayAlert(
-                    "Erreur",
-                    $"Impossible de créer la catégorie: {ex.Message}",
-                    "OK"
-                );
+                var page = GetActivePage();
+                if (page != null)
+                {
+                    await page.DisplayAlert(
+                        "Erreur",
+                        $"Impossible de creer la categorie: {ex.Message}",
+                        "OK"
+                    );
+                }
             }
+        }
+
+        internal static Page? GetActivePage()
+        {
+            return Application.Current?.Windows.FirstOrDefault()?.Page ?? Application.Current?.MainPage;
         }
 
         public async Task UpdateCategoryBudgetAsync(string nomCategorie, double newLimit)
@@ -263,7 +326,8 @@ namespace Projet_Budget_M1.ViewModels
             try
             {
                 await DbService.UpdateCategoryBudgetAsync(_currentUserEmail, nomCategorie, newLimit, _currentMonth);
-                await LoadBudgetDataAsync();
+                // Evite les popups d'alerte concurrentes juste apres l'edition.
+                await LoadBudgetDataAsync(showAlerts: false);
             }
             catch (Exception ex)
             {
@@ -275,15 +339,35 @@ namespace Projet_Budget_M1.ViewModels
             }
         }
 
+        public async Task UpdateMonthlyBudgetAsync(double newMonthlyBudget)
+        {
+            if (newMonthlyBudget < 0)
+            {
+                throw new Exception("Le budget mensuel ne peut pas etre negatif.");
+            }
+
+            await DbService.CreateBudgetAsync(
+                _currentUserEmail,
+                _currentMonth,
+                (decimal)newMonthlyBudget,
+                null
+            );
+
+            await LoadBudgetDataAsync(showAlerts: false);
+        }
+
         private async Task EditSalaryAsync()
         {
+            var page = GetActivePage();
+            if (page == null) return;
+
             // Afficher les revenus existants et permettre d'en ajouter
             var revenus = await DbService.GetRevenusAsync(_currentUserEmail, _currentMonth);
             var revenusText = revenus.Count > 0 
                 ? string.Join("\n", revenus.Select(r => $"- {r.Libelle}: {r.Montant:F2} €"))
                 : "Aucun revenu enregistré";
             
-            var action = await Application.Current.MainPage.DisplayActionSheet(
+            var action = await page.DisplayActionSheet(
                 $"Revenus du mois ({revenusText})\n\nQue souhaitez-vous faire ?",
                 "Annuler",
                 null,
@@ -296,7 +380,7 @@ namespace Projet_Budget_M1.ViewModels
             var libelle = action.Contains("salaire") ? "Salaire" : "Revenu supplémentaire";
             var placeholder = "0";
             
-            var result = await Application.Current.MainPage.DisplayPromptAsync(
+            var result = await page.DisplayPromptAsync(
                 $"💰 {libelle}",
                 $"Entrez le montant du {libelle.ToLower()}:",
                 "Enregistrer",
@@ -315,7 +399,7 @@ namespace Projet_Budget_M1.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    await Application.Current.MainPage.DisplayAlert(
+                    await page.DisplayAlert(
                         "Erreur",
                         $"Impossible d'ajouter le revenu: {ex.Message}",
                         "OK"
@@ -326,7 +410,10 @@ namespace Projet_Budget_M1.ViewModels
 
         public async Task DeleteCategoryAsync(int idCategorie, string nomCategorie)
         {
-            var confirm = await Application.Current.MainPage.DisplayAlert(
+            var page = GetActivePage();
+            if (page == null) return;
+
+            var confirm = await page.DisplayAlert(
                 "Supprimer la catégorie",
                 $"Êtes-vous sûr de vouloir supprimer la catégorie '{nomCategorie}' ?",
                 "Supprimer",
@@ -342,7 +429,7 @@ namespace Projet_Budget_M1.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    await Application.Current.MainPage.DisplayAlert(
+                    await page.DisplayAlert(
                         "Erreur",
                         $"Impossible de supprimer la catégorie: {ex.Message}",
                         "OK"
@@ -353,13 +440,25 @@ namespace Projet_Budget_M1.ViewModels
 
         public async Task UpdateCategoryNameAsync(int idCategorie, string currentName)
         {
-            var result = await Application.Current.MainPage.DisplayPromptAsync(
-                "Modifier le nom",
-                "Entrez le nouveau nom de la catégorie:",
-                "Enregistrer",
-                "Annuler",
-                initialValue: currentName
-            );
+            var page = GetActivePage();
+            if (page == null) return;
+
+            string? result;
+            try
+            {
+                result = await page.DisplayPromptAsync(
+                    "Modifier le nom",
+                    "Entrez le nouveau nom de la catégorie:",
+                    "Enregistrer",
+                    "Annuler",
+                    initialValue: currentName
+                );
+            }
+            catch (Exception ex)
+            {
+                await page.DisplayAlert("Erreur", $"Ouverture de l'edition impossible: {ex.Message}", "OK");
+                return;
+            }
 
             if (!string.IsNullOrWhiteSpace(result))
             {
@@ -370,7 +469,7 @@ namespace Projet_Budget_M1.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    await Application.Current.MainPage.DisplayAlert(
+                    await page.DisplayAlert(
                         "Erreur",
                         $"Impossible de modifier le nom: {ex.Message}",
                         "OK"
@@ -453,25 +552,52 @@ namespace Projet_Budget_M1.ViewModels
         {
             _model = model;
             _parentViewModel = parentViewModel;
-            EditBudgetCommand = new Command(async () => await OnEditBudget());
-            DeleteCategoryCommand = new Command(async () => await OnDeleteCategory());
-            EditCategoryNameCommand = new Command(async () => await OnEditCategoryName());
+            EditBudgetCommand = new Command(async () => await ExecuteSafeAsync(OnEditBudget));
+            DeleteCategoryCommand = new Command(async () => await ExecuteSafeAsync(OnDeleteCategory));
+            EditCategoryNameCommand = new Command(async () => await ExecuteSafeAsync(OnEditCategoryName));
+        }
+
+        private async Task ExecuteSafeAsync(Func<Task> action)
+        {
+            var page = BudgetViewModel.GetActivePage();
+            try
+            {
+                await action();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur commande budget categorie: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                if (page != null)
+                {
+                    await page.DisplayAlert("Erreur", $"Une erreur est survenue: {ex.Message}", "OK");
+                }
+            }
         }
 
         private async Task OnEditBudget()
         {
             var placeholder = LimiteCategorie > 0 ? LimiteCategorie.ToString("F2") : "0";
-            var page = Application.Current?.Windows.FirstOrDefault()?.Page ?? Application.Current?.MainPage;
+            var page = BudgetViewModel.GetActivePage();
             if (page is null) return;
 
-            var result = await page.DisplayPromptAsync(
-                $"Budget - {NomCategorie}",
-                "Entrez le budget mensuel pour cette catégorie:",
-                "Enregistrer",
-                "Annuler",
-                placeholder: placeholder,
-                keyboard: Keyboard.Numeric
-            );
+            string? result;
+            try
+            {
+                result = await page.DisplayPromptAsync(
+                    $"Budget - {NomCategorie}",
+                    "Entrez le budget mensuel pour cette catégorie:",
+                    "Enregistrer",
+                    "Annuler",
+                    placeholder: placeholder,
+                    keyboard: Keyboard.Numeric
+                );
+            }
+            catch (Exception ex)
+            {
+                await page.DisplayAlert("Erreur", $"Ouverture de l'edition impossible: {ex.Message}", "OK");
+                return;
+            }
 
             if (string.IsNullOrWhiteSpace(result))
             {

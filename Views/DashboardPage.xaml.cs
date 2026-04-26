@@ -10,6 +10,7 @@ namespace Projet_Budget_M1.Views
 {
     public partial class DashboardPage : ContentPage
     {
+        private readonly ObservableCollection<Transaction> _recentTransactions = new();
         private string _currentUserEmail = string.Empty;
         private DashboardViewModel _viewModel;
         private ObservableCollection<BudgetMensuel> _availableBudgets = new();
@@ -43,7 +44,7 @@ namespace Projet_Budget_M1.Views
 
         private async void OnViewBudgetDetailsTapped(object sender, EventArgs e)
         {
-            await DisplayAlert("Budget", "Afficher les détails du budget", "OK");
+            await Shell.Current.GoToAsync("//BudgetPage");
         }
 
         private async void OnViewAllTransactionsTapped(object sender, EventArgs e)
@@ -361,7 +362,7 @@ namespace Projet_Budget_M1.Views
                 
                 // Réinitialiser le formulaire
                 ResetTransactionForm();
-                
+
                 // Afficher le message de succès
                 await DisplayAlert("Succès", "Transaction enregistrée", "OK");
                 
